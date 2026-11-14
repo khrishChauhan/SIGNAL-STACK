@@ -233,21 +233,105 @@ class FallbackProvider(AIServiceInterface):
 
     def _synthesize_brief(self, prompt: str) -> Dict[str, Any]:
         return {
+            "title": "Monday Morning Intelligence Brief",
             "executive_tldr": [
-                "Key regulatory clarity provided in core market, stabilizing consumer and student demand.",
-                "Rival launched subsidized financing option, placing moderate pressure on uncommitted leads.",
-                "Customer inquiries shifting toward lower tuition and higher return alternatives."
+                "Regulatory policy shift stabilized cross-border demand and student intake channels.",
+                "Primary rival launched subsidized financing option, placing moderate pressure on uncommitted leads.",
+                "Customer discussions indicate growing demand for verified outcome metrics and direct placement guarantees.",
+                "Internal product roadmap aligns with high-margin partnership expansion ahead of Q3 targets.",
+                "Early warning indicators highlight emerging localized visa processing delays requiring proactive customer advisory."
             ],
             "strategic_alert": {
-                "headline": "Competitor Aggressive Pricing Initiative Detected",
-                "verified_fact": "Competitor announced subsidized pricing tiers across core service lines.",
-                "ai_interpretation": "Requires swift counter-messaging on value and personalized customer service.",
-                "recommended_action": "Equip sales team with competitive battlecard emphasizing partnership breadth and customer success guarantees."
+                "headline": "Competitor Subsidized Financing Initiative Detected",
+                "verified_fact": "Competitor announced 0% interest loan alternatives across primary overseas education corridors.",
+                "ai_interpretation": "Requires swift counter-positioning highlighting university accreditation depth and post-study work authorization support.",
+                "recommended_action": "Equip front-line sales counselors with competitive battlecard emphasizing institutional relationships."
             },
+            "customer_voice": [
+                {
+                    "sentiment": "Students express urgency regarding changing post-study visa regulations in destination countries.",
+                    "source": "Reddit r/IntlStudents & Public Discussion Forums",
+                    "evidence": "Multiple student threads discussing visa policy ambiguity and asking for transparent counselor verification."
+                },
+                {
+                    "sentiment": "Demand for flexible installment payments and scholarship discovery services has increased 40%.",
+                    "source": "Customer Review Platforms",
+                    "evidence": "Users frequently praise institutions offering pre-vetted scholarship search tools."
+                }
+            ],
+            "competitor_movements": [
+                {
+                    "competitor": "Global EdTech Rivals",
+                    "observation": "Expanded regional university partnerships across Southeast Asia.",
+                    "strategic_impact": "Direct competition in secondary tier-2 student feeder markets."
+                },
+                {
+                    "competitor": "Direct Competitor Portal",
+                    "observation": "Published updated 2026 admissions guide and launched AI counseling chat preview.",
+                    "strategic_impact": "Increases customer expectations for immediate 24/7 inquiry turnaround times."
+                }
+            ],
+            "market_shifts": [
+                {
+                    "shift": "Government educational ministry revisions regarding international student compliance standards.",
+                    "evidence": "Official policy circular published on governmental education portals.",
+                    "implication": "Favors authorized, vetted educational consultancies over unverified local intermediaries."
+                },
+                {
+                    "shift": "Rising currency volatility impacting tuition affordability thresholds.",
+                    "evidence": "Central Bank quarterly exchange rate bulletins.",
+                    "implication": "Heightens student sensitivity to total cost of education and scholarship transparency."
+                }
+            ],
+            "internal_alignment": [
+                {
+                    "internal_doc": "Strategic Growth Plan Q3/Q4",
+                    "strategic_relevance": "Validates company decision to diversify university partnerships beyond single country risk."
+                }
+            ],
+            "opportunities": [
+                {
+                    "title": "Accelerate Tier-2 University Recruitment Pipeline",
+                    "evidence": "Monitored competitors are currently focused exclusively on Tier-1 premium programs.",
+                    "impact": "Unlocks underserved high-volume student segment with 35% lower acquisition cost.",
+                    "timeframe": "Immediate (Next 30 Days)"
+                },
+                {
+                    "title": "Launch Direct Visa & Compliance Advisory Hub",
+                    "evidence": "Official ministry guidelines introduced new verification steps causing applicant confusion.",
+                    "impact": "Establishes institutional authority and captures organic search traffic seeking regulatory clarity.",
+                    "timeframe": "Next 14 Days"
+                },
+                {
+                    "title": "Introduce Institutional Scholarship Aggregator",
+                    "evidence": "Student sentiment across 4 monitored public forums shows scholarship search as top decision barrier.",
+                    "impact": "Increases lead capture conversion rate by an estimated 22% with zero additional ad spend.",
+                    "timeframe": "Next 45 Days"
+                }
+            ],
+            "risks_and_threats": [
+                {
+                    "risk": "Competitor Subsidized Tuition Financing",
+                    "severity": "HIGH",
+                    "evidence": "Rival press release confirming $5M loan facility partnership.",
+                    "mitigation": "Partner with non-bank financial institutions to match financing flexibility."
+                },
+                {
+                    "risk": "Regulatory Visa Cap Adjustments",
+                    "severity": "MEDIUM",
+                    "evidence": "Government announcements regarding annual international student intake caps.",
+                    "mitigation": "Diversify applicant portfolio across multi-country destination corridors."
+                }
+            ],
             "actions": [
                 {"priority": "P0", "action": "Finalize alternative co-financing partnership term sheet", "owner": "Founder", "deadline": "Wednesday 5 PM"},
                 {"priority": "P1", "action": "Deploy email campaign addressing recent policy reassurances", "owner": "Growth Lead", "deadline": "Tuesday 10 AM"},
                 {"priority": "P2", "action": "Update competitive battlecards for front-line sales counselors", "owner": "Product Marketing", "deadline": "Friday"}
+            ],
+            "what_to_watch": [
+                "Weekly visa approval latency metrics from destination embassy consular channels.",
+                "Competitor expansion into student accommodation and pre-arrival banking services.",
+                "Quarterly university partner intake quota announcements for Autumn semester."
             ],
             "is_fallback": True
         }
