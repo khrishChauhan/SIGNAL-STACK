@@ -5,6 +5,7 @@ import time
 from zoneinfo import ZoneInfo
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from backend.app.db.session import AsyncSessionLocal
 from backend.app.models.audit import ScheduledJob
@@ -59,20 +60,26 @@ class SchedulerManager:
             self.scheduler.shutdown(wait=False)
             logger.info("APScheduler AsyncIOScheduler shut down cleanly.")
 
-    @staticmethod
+    @classmethod
     async def execute_weekly_briefing_workflow(
+        cls,
+        company_id: str,
+        week_identifier: Optional[str] = None,
+        session: Optional[AsyncSession] = None
+    ) -> Dict[str, Any]:
+        """Autonomous Weekly Monday Morning Intelligence Brief Workflow entry point."""
+        if session is not None:
+            return await cls._run_weekly_briefing_workflow(session, company_id, week_identifier)
+        async with AsyncSessionLocal() as sess:
+            return await cls._run_weekly_briefing_workflow(sess, company_id, week_identifier)
+
+    @classmethod
+    async def _run_weekly_briefing_workflow(
+        cls,
+        session: AsyncSession,
         company_id: str,
         week_identifier: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Autonomous Weekly Monday Morning Intelligence Brief Workflow:
-
-        1. Load company & approved sources
-        2. Crawl sources with deduplication & change tracking
-        3. Extract evidence and analyze signals
-        4. Rank signals via multi-factor engine
-        5. Generate complete 10-section Monday Brief
-        6. Persist brief and record execution history
-        """
         start_time = time.time()
         now = datetime.now(timezone.utc)
         job_log = {
@@ -81,102 +88,109 @@ class SchedulerManager:
             "company_id": company_id
         }
 
-        async with AsyncSessionLocal() as session:
-            job_stmt = select(ScheduledJob).where(
-                ScheduledJob.company_id == company_id,
-                ScheduledJob.job_name == "WEEKLY_BRIEF"
+        job_stmt = select(ScheduledJob).where(
+            ScheduledJob.company_id == company_id,
+            ScheduledJob.job_name == "WEEKLY_BRIEF"
+        )
+        job = (await session.execute(job_stmt)).scalar_one_or_none()
+
+        try:
+            # 1. Verify Company
+            comp_stmt = select(Company).where(Company.id == company_id)
+            company = (await session.execute(comp_stmt)).scalar_one_or_none()
+            if not company:
+                raise ValueError(f"Company {company_id} not found")
+
+            logger.info(f"Starting automated weekly briefing workflow for {company.name}")
+
+            # 2. Run crawl cycle on all approved sources
+            crawl_job = await WebCrawlingEngine.run_crawl_cycle(
+                session=session,
+                company_id=company_id,
+                force_all_approved=True
             )
-            job = (await session.execute(job_stmt)).scalar_one_or_none()
+            job_log["crawled_items"] = crawl_job.items_crawled
+            job_log["extracted_items"] = crawl_job.items_extracted
 
-            try:
-                # 1. Verify Company
-                comp_stmt = select(Company).where(Company.id == company_id)
-                company = (await session.execute(comp_stmt)).scalar_one_or_none()
-                if not company:
-                    raise ValueError(f"Company {company_id} not found")
+            # 3. Process new documents into ranked signals
+            new_signals = await IntelligenceAnalysisAgent.process_company_documents(
+                session=session,
+                company_id=company_id,
+                limit_documents=15
+            )
+            job_log["signals_generated"] = len(new_signals)
 
-                logger.info(f"Starting automated weekly briefing workflow for {company.name}")
+            # 4. Generate the Monday Morning Brief (forces fresh synthesis)
+            brief = await BriefService.generate_brief(
+                session=session,
+                company_id=company_id,
+                week_identifier=week_identifier,
+                force_refresh=True
+            )
+            job_log["brief_id"] = brief.id
+            job_log["brief_week"] = brief.brief_week
 
-                # 2. Run crawl cycle on all approved sources
-                crawl_job = await WebCrawlingEngine.run_crawl_cycle(
-                    session=session,
-                    company_id=company_id,
-                    force_all_approved=True
-                )
-                job_log["crawled_items"] = crawl_job.items_crawled
-                job_log["extracted_items"] = crawl_job.items_extracted
+            duration_ms = int((time.time() - start_time) * 1000)
+            job_log["status"] = "SUCCESS"
+            job_log["duration_ms"] = duration_ms
 
-                # 3. Process new documents into ranked signals
-                new_signals = await IntelligenceAnalysisAgent.process_company_documents(
-                    session=session,
-                    company_id=company_id,
-                    limit_documents=15
-                )
-                job_log["signals_generated"] = len(new_signals)
+            # 5. Update ScheduledJob record
+            if job:
+                job.last_run_at = now
+                job.last_status = "SUCCESS"
+                job.last_duration_ms = duration_ms
+                job.last_error = None
+                current_logs = list(job.execution_logs or [])
+                current_logs.insert(0, job_log)
+                job.execution_logs = current_logs[:30]  # keep latest 30 runs
+                await session.commit()
 
-                # 4. Generate the Monday Morning Brief (forces fresh synthesis)
-                brief = await BriefService.generate_brief(
-                    session=session,
-                    company_id=company_id,
-                    week_identifier=week_identifier,
-                    force_refresh=True
-                )
-                job_log["brief_id"] = brief.id
-                job_log["brief_week"] = brief.brief_week
+            logger.info(f"Automated weekly brief {brief.brief_week} generated successfully in {duration_ms}ms")
+            return {
+                "status": "SUCCESS",
+                "brief_id": brief.id,
+                "brief_week": brief.brief_week,
+                "duration_ms": duration_ms
+            }
 
-                duration_ms = int((time.time() - start_time) * 1000)
-                job_log["status"] = "SUCCESS"
-                job_log["duration_ms"] = duration_ms
+        except Exception as e:
+            duration_ms = int((time.time() - start_time) * 1000)
+            err_msg = str(e)
+            job_log["status"] = "FAILED"
+            job_log["duration_ms"] = duration_ms
+            job_log["error"] = err_msg
+            logger.error(f"Error in weekly briefing workflow for company {company_id}: {err_msg}", exc_info=True)
 
-                # 5. Update ScheduledJob record
-                if job:
-                    job.last_run_at = now
-                    job.last_status = "SUCCESS"
-                    job.last_duration_ms = duration_ms
-                    job.last_error = None
-                    current_logs = list(job.execution_logs or [])
-                    current_logs.insert(0, job_log)
-                    job.execution_logs = current_logs[:30]  # keep latest 30 runs
-                    await session.commit()
+            if job:
+                job.last_run_at = now
+                job.last_status = "FAILED"
+                job.last_duration_ms = duration_ms
+                job.last_error = err_msg[:500]
+                current_logs = list(job.execution_logs or [])
+                current_logs.insert(0, job_log)
+                job.execution_logs = current_logs[:30]
+                await session.commit()
 
-                logger.info(f"Automated weekly brief {brief.brief_week} generated successfully in {duration_ms}ms")
-                return {
-                    "status": "SUCCESS",
-                    "brief_id": brief.id,
-                    "brief_week": brief.brief_week,
-                    "duration_ms": duration_ms
-                }
+            raise
 
-            except Exception as e:
-                duration_ms = int((time.time() - start_time) * 1000)
-                err_msg = str(e)
-                job_log["status"] = "FAILED"
-                job_log["duration_ms"] = duration_ms
-                job_log["error"] = err_msg
-                logger.error(f"Error in weekly briefing workflow for company {company_id}: {err_msg}", exc_info=True)
+    @classmethod
+    async def execute_monthly_audit_workflow(
+        cls,
+        company_id: str,
+        session: Optional[AsyncSession] = None
+    ) -> Dict[str, Any]:
+        """Autonomous Monthly Signal Stack Audit Workflow entry point."""
+        if session is not None:
+            return await cls._run_monthly_audit_workflow(session, company_id)
+        async with AsyncSessionLocal() as sess:
+            return await cls._run_monthly_audit_workflow(sess, company_id)
 
-                if job:
-                    job.last_run_at = now
-                    job.last_status = "FAILED"
-                    job.last_duration_ms = duration_ms
-                    job.last_error = err_msg[:500]
-                    current_logs = list(job.execution_logs or [])
-                    current_logs.insert(0, job_log)
-                    job.execution_logs = current_logs[:30]
-                    await session.commit()
-
-                raise
-
-    @staticmethod
-    async def execute_monthly_audit_workflow(company_id: str) -> Dict[str, Any]:
-        """Autonomous Monthly Signal Stack Audit Workflow:
-
-        1. Test connectivity and response times of all sources
-        2. Detect dead URLs, duplicate endpoints, and inactive sources
-        3. Discover alternative replacement candidates
-        4. Generate source health report & audit recommendations
-        5. Persist audit history without destructive auto-deletion
-        """
+    @classmethod
+    async def _run_monthly_audit_workflow(
+        cls,
+        session: AsyncSession,
+        company_id: str
+    ) -> Dict[str, Any]:
         start_time = time.time()
         now = datetime.now(timezone.utc)
         job_log = {
@@ -185,58 +199,57 @@ class SchedulerManager:
             "company_id": company_id
         }
 
-        async with AsyncSessionLocal() as session:
-            job_stmt = select(ScheduledJob).where(
-                ScheduledJob.company_id == company_id,
-                ScheduledJob.job_name == "MONTHLY_HEALTH_AUDIT"
-            )
-            job = (await session.execute(job_stmt)).scalar_one_or_none()
+        job_stmt = select(ScheduledJob).where(
+            ScheduledJob.company_id == company_id,
+            ScheduledJob.job_name == "MONTHLY_HEALTH_AUDIT"
+        )
+        job = (await session.execute(job_stmt)).scalar_one_or_none()
 
-            try:
-                report = await SourceHealthService.run_monthly_audit(session, company_id)
-                duration_ms = int((time.time() - start_time) * 1000)
+        try:
+            report = await SourceHealthService.run_monthly_audit(session, company_id)
+            duration_ms = int((time.time() - start_time) * 1000)
 
-                job_log["status"] = "SUCCESS"
-                job_log["duration_ms"] = duration_ms
-                job_log["report_id"] = report.id
-                job_log["total_sources"] = report.total_sources
-                job_log["healthy_count"] = report.healthy_count
-                job_log["dead_urls"] = report.dead_urls_count
+            job_log["status"] = "SUCCESS"
+            job_log["duration_ms"] = duration_ms
+            job_log["report_id"] = report.id
+            job_log["total_sources"] = report.total_sources
+            job_log["healthy_count"] = report.healthy_count
+            job_log["dead_urls"] = report.dead_urls_count
 
-                if job:
-                    job.last_run_at = now
-                    job.last_status = "SUCCESS"
-                    job.last_duration_ms = duration_ms
-                    job.last_error = None
-                    current_logs = list(job.execution_logs or [])
-                    current_logs.insert(0, job_log)
-                    job.execution_logs = current_logs[:30]
-                    await session.commit()
+            if job:
+                job.last_run_at = now
+                job.last_status = "SUCCESS"
+                job.last_duration_ms = duration_ms
+                job.last_error = None
+                current_logs = list(job.execution_logs or [])
+                current_logs.insert(0, job_log)
+                job.execution_logs = current_logs[:30]
+                await session.commit()
 
-                logger.info(f"Monthly source health audit completed for {company_id} in {duration_ms}ms")
-                return {
-                    "status": "SUCCESS",
-                    "report_id": report.id,
-                    "duration_ms": duration_ms
-                }
-            except Exception as e:
-                duration_ms = int((time.time() - start_time) * 1000)
-                err_msg = str(e)
-                job_log["status"] = "FAILED"
-                job_log["duration_ms"] = duration_ms
-                job_log["error"] = err_msg
+            logger.info(f"Monthly source health audit completed for {company_id} in {duration_ms}ms")
+            return {
+                "status": "SUCCESS",
+                "report_id": report.id,
+                "duration_ms": duration_ms
+            }
+        except Exception as e:
+            duration_ms = int((time.time() - start_time) * 1000)
+            err_msg = str(e)
+            job_log["status"] = "FAILED"
+            job_log["duration_ms"] = duration_ms
+            job_log["error"] = err_msg
 
-                if job:
-                    job.last_run_at = now
-                    job.last_status = "FAILED"
-                    job.last_duration_ms = duration_ms
-                    job.last_error = err_msg[:500]
-                    current_logs = list(job.execution_logs or [])
-                    current_logs.insert(0, job_log)
-                    job.execution_logs = current_logs[:30]
-                    await session.commit()
+            if job:
+                job.last_run_at = now
+                job.last_status = "FAILED"
+                job.last_duration_ms = duration_ms
+                job.last_error = err_msg[:500]
+                current_logs = list(job.execution_logs or [])
+                current_logs.insert(0, job_log)
+                job.execution_logs = current_logs[:30]
+                await session.commit()
 
-                raise
+            raise
 
     def register_or_update_job(self, scheduled_job: ScheduledJob):
         """Registers or modifies a scheduled cron job in the APScheduler instance."""

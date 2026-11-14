@@ -118,7 +118,7 @@ class SourceHealthService:
                         src.health_status = "BROKEN"
                         src.consecutive_failures += 1
                         status_result = "BROKEN"
-                        degraded_categories.add(src.category)
+                        degraded_categories.add(getattr(src, "pillar", "MARKET"))
                         finding_details.append(f"Dead URL: HTTP {http_code} error.")
                 except Exception as exc:
                     latency_ms = round((time.time() - start_time) * 1000, 2)
@@ -129,7 +129,7 @@ class SourceHealthService:
                     src.health_status = "BROKEN"
                     src.consecutive_failures += 1
                     status_result = "BROKEN"
-                    degraded_categories.add(src.category)
+                    degraded_categories.add(getattr(src, "pillar", "MARKET"))
                     finding_details.append(f"Dead URL: Connection failure ({str(exc)[:60]}).")
 
                 src.last_health_check = now
@@ -139,7 +139,7 @@ class SourceHealthService:
                     "source_id": src.id,
                     "source_name": src.name,
                     "url": src.url,
-                    "category": src.category,
+                    "category": getattr(src, "pillar", "MARKET"),
                     "http_status_code": http_code,
                     "response_time_ms": latency_ms,
                     "status_result": status_result,

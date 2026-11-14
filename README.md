@@ -9,9 +9,10 @@ Signal Stack is an autonomous, evidence-backed intelligence engine designed for 
 - **Backend**: FastAPI (Python 3.12+), SQLAlchemy 2.0 (Async), Pydantic v2
 - **Database**: SQLite (local development with zero setup) & PostgreSQL (production)
 - **AI Engine**: Ollama local models (`llama3.2`) with structured JSON, retry/timeout resilience, and a deterministic offline fallback engine
-- **Crawler & NLP**: HTTPX (async client), BeautifulSoup4, Trafilatura, Feedparser, DuckDuckGo Search
-- **Document Processing (RAG)**: PyMuPDF (`pymupdf`), python-docx, Pandas, openpyxl
-- **Scheduling**: APScheduler (AsyncIOScheduler)
+- **Crawler & NLP**: HTTPX (async client), BeautifulSoup4, Trafilatura, Feedparser, DuckDuckGo Search (`ddgs`)
+- **Document Processing (RAG)**: PyMuPDF (`pymupdf`), python-docx, Pandas, openpyxl, ChromaDB
+- **Automation & Scheduling**: APScheduler (`AsyncIOScheduler`) with configurable days, times, timezones, and job history logging
+- **Frontend**: Next.js 14 App Router, TypeScript, Tailwind CSS, Lucide icons, Recharts
 
 ---
 
@@ -21,15 +22,15 @@ Signal Stack is an autonomous, evidence-backed intelligence engine designed for 
 SIGNAL STACK/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py                    # FastAPI application initialization & middleware
+│   │   ├── main.py                    # FastAPI application initialization & APScheduler lifecycle
 │   │   ├── core/                      # Configuration, logging, custom errors
 │   │   ├── db/                        # Async sessionmaker, base, schema initialization & seeding
 │   │   ├── models/                    # 16 SQLAlchemy 2.0 relational models
 │   │   ├── schemas/                   # Pydantic v2 request/response models
-│   │   ├── services/                  # Modular domain services (crawling, interview, brief, etc.)
+│   │   ├── services/                  # Domain services (crawling, interview, brief, health audit, scheduler)
 │   │   │   └── ai/                    # Multi-provider AI abstraction layer (Ollama / Fallback)
 │   │   └── api/                       # REST API router & endpoint handlers
-│   ├── tests/                         # Pytest test suite (18 unit & integration tests)
+│   ├── tests/                         # Pytest test suite (23 unit & integration tests)
 │   ├── data/                          # SQLite database, uploaded files, ChromaDB vector store
 │   ├── requirements.txt               # Backend Python dependencies
 │   ├── Dockerfile                     # Production container spec
@@ -43,10 +44,10 @@ SIGNAL STACK/
 │   │   │   ├── sources/stack/         # 4. Signal Stack Curation (4 pillars)
 │   │   │   ├── signals/               # 5. Chronological Intelligence Feed & Evidence Drawer
 │   │   │   ├── competitors/           # 6. Competitor Tracking Matrix
-│   │   │   ├── briefs/                # 7. Monday Morning Intelligence Brief (7 sections)
+│   │   │   ├── briefs/                # 7. Monday Morning Intelligence Brief (10 Sections, Print/MD Export)
 │   │   │   ├── documents/             # 8. Internal Knowledge Repository (ChromaDB Vector Store)
 │   │   │   ├── sources/               # 9. Granular Source Manager & Latency Telemetry
-│   │   │   ├── automation/            # 10. Scheduling & Crawl Telemetry (APScheduler)
+│   │   │   ├── automation/            # 10. Autonomous Workflows, Schedules & Source Health Audits
 │   │   │   └── settings/              # 11. Entity & Engine Settings
 │   │   ├── components/                # Reusable UI components, Sidebar, TopNavbar, Modals
 │   │   ├── context/                   # CompanyContext (multi-tenant organization switcher)
