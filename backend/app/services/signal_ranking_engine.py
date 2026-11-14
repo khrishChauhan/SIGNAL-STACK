@@ -61,7 +61,11 @@ class SignalRankingEngine:
         # 5. Recency Decay (0-100)
         recency_score = 70.0
         if published_at:
-            age_days = (datetime.now(timezone.utc) - published_at).total_seconds() / 86400.0
+            if published_at.tzinfo is None:
+                pub_tz = published_at.replace(tzinfo=timezone.utc)
+            else:
+                pub_tz = published_at.astimezone(timezone.utc)
+            age_days = max(0.0, (datetime.now(timezone.utc) - pub_tz).total_seconds() / 86400.0)
             if age_days <= 1.0:
                 recency_score = 100.0
             elif age_days <= 7.0:

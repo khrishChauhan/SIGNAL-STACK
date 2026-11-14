@@ -64,12 +64,13 @@ class BriefService:
         for s in signals:
             if s.evidences:
                 for ev in s.evidences:
+                    pub_d = getattr(ev, "published_at", None) or getattr(ev, "captured_at", None)
                     source_appendix.append({
-                        "original_source": ev.source_name or f"{s.pillar.title()} Intelligence Feed",
-                        "direct_url": ev.url,
-                        "publication_date": ev.captured_at.strftime("%Y-%m-%d") if ev.captured_at else "Recent",
+                        "original_source": getattr(ev, "source_name", None) or f"{s.pillar.title()} Intelligence Feed",
+                        "direct_url": getattr(ev, "source_url", getattr(ev, "url", company.website_url)),
+                        "publication_date": pub_d.strftime("%Y-%m-%d") if pub_d else "Recent",
                         "discovery_date": s.created_at.strftime("%Y-%m-%d") if s.created_at else "Recent",
-                        "evidence_snippet": ev.extracted_text or s.verified_fact,
+                        "evidence_snippet": getattr(ev, "exact_quote", getattr(ev, "extracted_text", s.verified_fact)),
                         "verification_status": "VERIFIED" if (s.confidence_score and s.confidence_score >= 0.7) else "UNVERIFIED"
                     })
             else:

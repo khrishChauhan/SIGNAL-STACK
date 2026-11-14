@@ -1,0 +1,55 @@
+{
+  "timestamp": "2026-11-14T08:49:59.603737+00:00",
+  "primary_demonstration": {
+    "company_name": "MeetUniversity",
+    "website_url": "https://www.meetuniversity.com",
+    "approved_sources": 21,
+    "competitors_count": 5,
+    "crawled_documents": 45,
+    "signals_count": 23,
+    "brief_sections_count": 10,
+    "opportunities_count": 3,
+    "actions_count": 3,
+    "source_appendix_citations": 10
+  },
+  "reusability_test": {
+    "companies": {
+      "MeetUniversity": {
+        "industry": "EdTech / Higher Education Marketplace",
+        "sources_count": 21,
+        "competitors_count": 5,
+        "signals_count": 23,
+        "adaptive_q1": "Regarding revenue streams, how does MeetUniversity structure its monetization across institutional partners and end customers, and where do you expect the fastest margin expansion?"
+      },
+      "Postman": {
+        "industry": "Developer Tools / API Platform",
+        "sources_count": 13,
+        "competitors_count": 3,
+        "signals_count": 1,
+        "adaptive_q1": "Regarding revenue streams, how does Postman structure its monetization across institutional partners and end customers, and where do you expect the fastest margin expansion?"
+      },
+      "Linear": {
+        "industry": "Enterprise Compliance & ISO-27001 Issue Tracking",
+        "sources_count": 13,
+        "competitors_count": 3,
+        "signals_count": 1,
+        "adaptive_q1": "Regarding revenue streams, how does Linear structure its monetization across institutional partners and end customers, and where do you expect the fastest margin expansion?"
+      }
+    },
+    "total_intelligence_records": 70
+  },
+  "functional_audit": {},
+  "security_audit": {
+    "sql_injection_protection": "VERIFIED (SQLAlchemy 2.0 async parameterized statements)",
+    "file_upload_whitelist": [
+      ".pdf",
+      ".docx",
+      ".csv",
+      ".xlsx",
+      ".txt"
+    ],
+    "max_file_size_bytes": 26214400,
+    "cost_statement": "100% Free & Open Source (Local Ollama / Fallback Provider, SQLite/PostgreSQL, ChromaDB)"
+  },
+  "assignment_checklist": {}
+}

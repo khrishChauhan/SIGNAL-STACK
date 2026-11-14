@@ -230,8 +230,7 @@ async def seed_initial_demo_data(session: AsyncSession) -> None:
                 name=comp_data["name"],
                 website_url=comp_data["website_url"],
                 tier=comp_data["tier"],
-                notes=comp_data["notes"],
-                relevance_reason=comp_data["notes"]
+                notes=comp_data["notes"]
             )
             session.add(c)
 
@@ -243,8 +242,8 @@ async def seed_initial_demo_data(session: AsyncSession) -> None:
             competitors=[c["name"] for c in demo["competitors"]]
         )
         for s in discovered:
-            # Set the first 5 sources to APPROVED, rest DISCOVERED
-            src_status = "APPROVED" if discovered.index(s) < 5 else "DISCOVERED"
+            # For MeetUniversity, approve all 20+ sources to satisfy mandatory demo target
+            src_status = "APPROVED" if (demo["name"] == "MeetUniversity" or discovered.index(s) < 8) else "DISCOVERED"
             source = IntelligenceSource(
                 company_id=comp.id,
                 name=s["name"],
@@ -256,8 +255,7 @@ async def seed_initial_demo_data(session: AsyncSession) -> None:
                 expected_frequency=s.get("update_frequency", "DAILY"),
                 reliability_score=s.get("credibility", 0.85),
                 approval_status=src_status,
-                health_status="HEALTHY",
-                latency_ms=180
+                health_status="HEALTHY"
             )
             session.add(source)
 
@@ -331,15 +329,47 @@ async def seed_initial_demo_data(session: AsyncSession) -> None:
                 internal_alignment=[
                     {"internal_doc": "FY2026 Strategy Plan", "strategic_relevance": "Validates leadership decision to expand non-UK university partner contracts."}
                 ],
+                opportunities=[
+                    {"title": "Fast-Track Alternative Study Corridor Admissions", "evidence": "Canadian visa delays diverting student inquiries to Germany, Ireland, and Dubai.", "impact": "Captures 25% higher placement volume from displaced students.", "timeframe": "Immediate (Next 30 Days)"},
+                    {"title": "Launch Direct Co-Financing & Forex Advisory Hub", "evidence": "UK maintenance proof increase causing applicant liquidity friction.", "impact": "Reduces dropout rate at visa stage by estimated 18%.", "timeframe": "Next 14 Days"},
+                    {"title": "Expand AI Admissions Counselor for Tier-2 Cities", "evidence": "Competitors charging for test prep while search volume surges in non-metro hubs.", "impact": "35% lower cost-per-lead acquisition across non-metro hubs.", "timeframe": "Next 45 Days"}
+                ],
+                risks_and_threats=[
+                    {"risk": "UKVI Financial Maintenance Requirement Surge", "severity": "HIGH", "evidence": "Official UKVI gazette update requiring £1,483/mo maintenance proof.", "mitigation": "Partner with NBFC educational lenders for instant pre-visa liquidity verification."},
+                    {"risk": "Competitor Free IELTS Prep Lead Magnet", "severity": "MEDIUM", "evidence": "LeapScholar announced zero-fee diagnostic prep tool.", "mitigation": "Equip student portal with integrated test prep diagnostics and university matching."}
+                ],
+                what_to_watch=[
+                    "Weekly visa issuance latency from Canadian and UK consular posts.",
+                    "Competitor scholarship funding partnerships and student accommodation deals.",
+                    "Changes in destination country post-study work visa eligibility rules."
+                ],
+                source_appendix=[
+                    {
+                        "original_source": "UKVI Official Gazette",
+                        "direct_url": "https://www.gov.uk/government/organisations/uk-visas-and-immigration.atom",
+                        "publication_date": "2026-10-15",
+                        "discovery_date": "2026-10-16",
+                        "verification_status": "VERIFIED",
+                        "evidence_snippet": "International students must show proof of £1,483 per month for study in London, rising to reflect domestic cost-of-living increases."
+                    },
+                    {
+                        "original_source": "Reddit r/Indians_StudyAbroad",
+                        "direct_url": "https://www.reddit.com/r/Indians_StudyAbroad/.rss",
+                        "publication_date": "2026-10-20",
+                        "discovery_date": "2026-10-21",
+                        "verification_status": "VERIFIED",
+                        "evidence_snippet": "Multiple applicants reporting IRCC provincial attestation letter delays impacting September semester intake."
+                    }
+                ],
                 generated_at=now
             )
             session.add(brief)
             await session.flush()
 
             actions = [
-                BriefAction(brief_id=brief.id, priority="P0", action_text="Finalize emergency student financing partner integration for UK autumn cohort.", owner_role="VP Strategic Partnerships", deadline="Wednesday 17:00", is_completed=False),
-                BriefAction(brief_id=brief.id, priority="P1", action_text="Deploy updated visa maintenance cost calculator on MeetUniversity course finder.", owner_role="Head of Product", deadline="Friday 12:00", is_completed=False),
-                BriefAction(brief_id=brief.id, priority="P2", action_text="Audit Reddit and Yocket community feeds for Canadian study permit alternative inquiries.", owner_role="Customer Growth Lead", deadline="Next 7 Days", is_completed=True)
+                BriefAction(brief_id=brief.id, company_id=comp.id, priority="P0", action_text="Finalize emergency student financing partner integration for UK autumn cohort.", owner="VP Strategic Partnerships", deadline="Wednesday 17:00", status="PENDING"),
+                BriefAction(brief_id=brief.id, company_id=comp.id, priority="P1", action_text="Deploy updated visa maintenance cost calculator on MeetUniversity course finder.", owner="Head of Product", deadline="Friday 12:00", status="PENDING"),
+                BriefAction(brief_id=brief.id, company_id=comp.id, priority="P2", action_text="Audit Reddit and Yocket community feeds for Canadian study permit alternative inquiries.", owner="Customer Growth Lead", deadline="Next 7 Days", status="COMPLETED")
             ]
             session.add_all(actions)
 
