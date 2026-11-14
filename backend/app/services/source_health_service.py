@@ -6,9 +6,8 @@ import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from backend.app.models.audit import SourceHealthReport
-from backend.app.models.source import IntelligenceSource
+from backend.app.models.source import IntelligenceSource, Competitor
 from backend.app.models.company import Company
-from backend.app.models.competitor import Competitor
 from backend.app.services.source_discovery_agent import SourceDiscoveryAgent
 from backend.app.core.errors import ResourceNotFoundError
 from backend.app.core.logging import logger

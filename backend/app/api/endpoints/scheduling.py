@@ -1,10 +1,16 @@
 from typing import List, Dict, Any
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.db.session import get_db
 from backend.app.services.scheduler_service import SchedulerService
+from backend.app.services.scheduler_manager import SchedulerManager
 from backend.app.services.ai.factory import get_ai_service
-from backend.app.schemas.schedule import ScheduleCreate, ScheduleResponse, SourceAuditResponse
+from backend.app.schemas.schedule import (
+    ScheduleCreate,
+    ScheduleUpdate,
+    ScheduleResponse,
+    SourceAuditResponse
+)
 from backend.app.schemas.common import APIResponse
 
 router = APIRouter(tags=["Scheduling, Source Audits & System Health"])
@@ -28,17 +34,53 @@ async def create_company_schedule(
     schedule = await SchedulerService.create_schedule(session, id, body)
     return APIResponse(data=schedule, message=f"Schedule for {schedule.job_name} initialized.")
 
+@router.put("/companies/{id}/schedules/{schedule_id}", response_model=APIResponse[ScheduleResponse])
+async def update_company_schedule(
+    id: str,
+    schedule_id: str,
+    body: ScheduleUpdate,
+    session: AsyncSession = Depends(get_db)
+):
+    """Updates briefing day, time, timezone, monitoring frequency, or active state."""
+    updated = await SchedulerService.update_schedule(session, id, schedule_id, body)
+    return APIResponse(data=updated, message=f"Schedule '{updated.job_name}' updated successfully.")
+
+@router.post("/companies/{id}/schedules/trigger-weekly", response_model=APIResponse[Dict[str, Any]])
+async def trigger_weekly_briefing_now(
+    id: str
+):
+    """Manually triggers the full autonomous weekly intelligence briefing workflow."""
+    result = await SchedulerManager.execute_weekly_briefing_workflow(id)
+    return APIResponse(data=result, message="Weekly briefing workflow executed successfully.")
+
+@router.post("/companies/{id}/schedules/trigger-audit", response_model=APIResponse[Dict[str, Any]])
+async def trigger_monthly_audit_now(
+    id: str
+):
+    """Manually triggers the autonomous monthly source health audit workflow."""
+    result = await SchedulerManager.execute_monthly_audit_workflow(id)
+    return APIResponse(data=result, message="Monthly source health audit executed successfully.")
+
 @router.post("/companies/{id}/source-audit", response_model=APIResponse[SourceAuditResponse])
 async def trigger_source_health_audit(
     id: str,
     session: AsyncSession = Depends(get_db)
 ):
-    """Executes an immediate monthly source health audit (latency, HTTP codes, and yield)."""
+    """Executes a monthly source health audit (latency, dead URLs, duplicate detection, replacements)."""
     report = await SchedulerService.run_source_audit(session, id)
     return APIResponse(
         data=report,
-        message=f"Audit completed: {report.healthy_count} healthy, {report.warning_count} warnings, {report.broken_count} broken."
+        message=f"Audit completed: {report.healthy_count} healthy, {report.warning_count} warnings, {report.dead_urls_count} dead URLs."
     )
+
+@router.get("/companies/{id}/source-audits", response_model=APIResponse[List[SourceAuditResponse]])
+async def list_company_source_audits(
+    id: str,
+    session: AsyncSession = Depends(get_db)
+):
+    """Retrieves audit report history for the company."""
+    reports = await SchedulerService.list_audit_history(session, id)
+    return APIResponse(data=reports)
 
 @router.get("/health", response_model=APIResponse[Dict[str, Any]])
 async def system_health():
