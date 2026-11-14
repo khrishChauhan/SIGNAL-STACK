@@ -28,6 +28,10 @@ class BriefResponse(BaseModel):
     market_shifts: List[Dict[str, Any]] = []
     customer_voice: List[Dict[str, Any]] = []
     internal_alignment: List[Dict[str, Any]] = []
+    opportunities: List[Dict[str, Any]] = []
+    risks_and_threats: List[Dict[str, Any]] = []
+    what_to_watch: List[str] = []
+    source_appendix: List[Dict[str, Any]] = []
     cited_signal_ids: List[str] = []
     status: str
     generated_at: datetime

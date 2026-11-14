@@ -12,12 +12,16 @@ class IntelligenceBrief(Base, TimestampMixin):
     brief_week = Column(String(20), nullable=False, index=True)  # e.g. "2026-W46"
     title = Column(String(255), nullable=False)
     
-    executive_tldr = Column(JSON, nullable=False, default=list)  # List of strings
+    executive_tldr = Column(JSON, nullable=False, default=list)  # List of strings (top 5 developments)
     strategic_alert = Column(JSON, nullable=False, default=dict)  # Alert dict
     competitor_movements = Column(JSON, nullable=False, default=list)  # List of competitor updates
     market_shifts = Column(JSON, nullable=False, default=list)  # List of market/regulatory shifts
     customer_voice = Column(JSON, nullable=False, default=list)  # List of customer sentiments
     internal_alignment = Column(JSON, nullable=False, default=list)  # List of RAG internal cross-refs
+    opportunities = Column(JSON, nullable=False, default=list)  # List of actionable opportunities (min 3)
+    risks_and_threats = Column(JSON, nullable=False, default=list)  # List of risks & threats
+    what_to_watch = Column(JSON, nullable=False, default=list)  # List of items to monitor next week
+    source_appendix = Column(JSON, nullable=False, default=list)  # List of cited source objects with URLs, quotes, dates
     cited_signal_ids = Column(JSON, nullable=False, default=list)  # List of signal UUIDs
     
     status = Column(String(50), nullable=False, default="PUBLISHED", index=True)  # DRAFT, PUBLISHED, ARCHIVED
