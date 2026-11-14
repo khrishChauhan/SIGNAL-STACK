@@ -7,6 +7,7 @@ from backend.app.core.config import settings
 from backend.app.core.logging import setup_logging, logger
 from backend.app.core.errors import SignalStackException, ResourceNotFoundError
 from backend.app.db.init_db import init_db
+from backend.app.services.scheduler_manager import SchedulerManager
 from backend.app.api.router import api_router
 
 @asynccontextmanager
@@ -21,10 +22,19 @@ async def lifespan(app: FastAPI):
     # Initialize DB Schema
     await init_db()
     
+    # Initialize & Start APScheduler
+    scheduler_mgr = SchedulerManager.get_instance()
+    scheduler_mgr.start()
+    try:
+        await scheduler_mgr.sync_all_jobs_from_db()
+    except Exception as e:
+        logger.warning(f"Could not sync scheduler jobs on startup: {e}")
+
     yield
     
     # Shutdown
     logger.info(f"Shutting down {settings.PROJECT_NAME}...")
+    scheduler_mgr.shutdown()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
