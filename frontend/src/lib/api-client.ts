@@ -5,6 +5,7 @@ import {
   IntelligenceSource,
   IntelligenceSignal,
   IntelligenceBrief,
+  BriefAction,
   InternalDocument,
   CrawlJob,
   ScheduledJob,
@@ -212,6 +213,21 @@ export const api = {
     return handleResponse<IntelligenceBrief>(res);
   },
 
+  async toggleBriefAction(actionId: string): Promise<BriefAction> {
+    const res = await fetch(`${BASE_URL}/api/briefs/actions/${actionId}`, {
+      method: "PATCH",
+    });
+    return handleResponse<BriefAction>(res);
+  },
+
+  getBriefExportHtmlUrl(briefId: string): string {
+    return `${BASE_URL}/api/briefs/${briefId}/export/html`;
+  },
+
+  getBriefExportMarkdownUrl(briefId: string): string {
+    return `${BASE_URL}/api/briefs/${briefId}/export/markdown`;
+  },
+
   // --- INTERNAL DOCUMENTS ---
   async uploadDocument(companyId: string, file: File): Promise<InternalDocument> {
     const formData = new FormData();
@@ -249,7 +265,7 @@ export const api = {
     return handleResponse<ScheduledJob[]>(res);
   },
 
-  async createSchedule(companyId: string, data: { job_type: string; cron_expression: string }): Promise<ScheduledJob> {
+  async createSchedule(companyId: string, data: Partial<ScheduledJob>): Promise<ScheduledJob> {
     const res = await fetch(`${BASE_URL}/api/companies/${companyId}/schedules`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -258,10 +274,38 @@ export const api = {
     return handleResponse<ScheduledJob>(res);
   },
 
+  async updateSchedule(companyId: string, scheduleId: string, data: Partial<ScheduledJob>): Promise<ScheduledJob> {
+    const res = await fetch(`${BASE_URL}/api/companies/${companyId}/schedules/${scheduleId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<ScheduledJob>(res);
+  },
+
+  async triggerWeeklyWorkflow(companyId: string): Promise<any> {
+    const res = await fetch(`${BASE_URL}/api/companies/${companyId}/schedules/trigger-weekly`, {
+      method: "POST",
+    });
+    return handleResponse<any>(res);
+  },
+
+  async triggerAuditWorkflow(companyId: string): Promise<any> {
+    const res = await fetch(`${BASE_URL}/api/companies/${companyId}/schedules/trigger-audit`, {
+      method: "POST",
+    });
+    return handleResponse<any>(res);
+  },
+
   async auditSources(companyId: string): Promise<SourceHealthReport> {
     const res = await fetch(`${BASE_URL}/api/companies/${companyId}/source-audit`, {
       method: "POST",
     });
     return handleResponse<SourceHealthReport>(res);
+  },
+
+  async listSourceAudits(companyId: string): Promise<SourceHealthReport[]> {
+    const res = await fetch(`${BASE_URL}/api/companies/${companyId}/source-audits`);
+    return handleResponse<SourceHealthReport[]>(res);
   },
 };

@@ -137,7 +137,7 @@ export default function AIInterviewPage() {
               Synthesized Priority Weights Vector
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-              {Object.entries(session.strategic_priorities).map(([key, val]) => (
+              {Object.entries(session.strategic_priorities || {}).map(([key, val]) => (
                 <div key={key} className="p-2.5 rounded bg-slate-50 border border-slate-200/60 flex flex-col">
                   <span className="text-slate-500 font-mono text-[10px] uppercase truncate">{key.replace(/_/g, " ")}</span>
                   <span className="text-sm font-bold text-slate-900 mt-0.5">

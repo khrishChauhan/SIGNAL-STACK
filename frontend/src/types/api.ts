@@ -1,10 +1,19 @@
-export type OnboardingStatus = 
-  | "REGISTERED" 
-  | "RESEARCHING" 
-  | "RESEARCH_COMPLETED" 
-  | "INTERVIEW_IN_PROGRESS" 
-  | "INTERVIEW_COMPLETED" 
-  | "MONITORING_ACTIVE";
+export type PillarType = "CUSTOMER" | "COMPETITOR" | "MARKET" | "INTERNAL";
+
+export type SourceType =
+  | "FORUM"
+  | "REVIEW_SITE"
+  | "SOCIAL"
+  | "COMPETITOR_SITE"
+  | "NEWS"
+  | "REGULATORY"
+  | "INDUSTRY_BODY"
+  | "INTERNAL_DOC"
+  | "RSS"
+  | "CUSTOM";
+
+export type ApprovalStatus = "PROPOSED" | "APPROVED" | "REJECTED" | "CUSTOM" | "PAUSED";
+export type HealthStatus = "HEALTHY" | "WARNING" | "BROKEN" | "AUDITING";
 
 export interface Company {
   id: string;
@@ -12,7 +21,7 @@ export interface Company {
   website_url: string;
   industry?: string | null;
   geography?: string | null;
-  onboarding_status: OnboardingStatus;
+  onboarding_status: string;
   created_at: string;
   updated_at: string;
   profile?: CompanyProfile | null;
@@ -25,59 +34,49 @@ export interface CompanyProfile {
   value_proposition?: string | null;
   target_customer_profile?: string | null;
   business_model?: string | null;
-  core_strengths: string[];
-  known_weaknesses: string[];
-  raw_research_data?: {
-    verified_facts?: Array<{ claim: string; evidence_url: string; quote: string }>;
-    inferences?: Array<{ inference: string; reasoning: string }>;
-    unknown_information?: string[];
-    geographical_presence?: string[];
-    available_public_information?: string[];
-  } | null;
+  core_strengths?: string[] | null;
+  known_weaknesses?: string[] | null;
+  raw_research_data?: any;
+  created_at: string;
   updated_at: string;
 }
 
 export interface InterviewQuestion {
   id: string;
   session_id: string;
-  company_id: string;
   question_number: number;
   question_text: string;
   category: string;
   rationale?: string | null;
+  answer_text?: string | null;
+  is_answered: boolean;
   is_skipped: boolean;
   created_at: string;
 }
 
 export interface InterviewAnswer {
   id: string;
-  session_id: string;
   question_id: string;
-  company_id: string;
-  question_number: number;
   answer_text: string;
-  extracted_insights?: Record<string, any> | null;
+  is_skipped: boolean;
+  skip_reason?: string | null;
   created_at: string;
 }
 
 export interface InterviewSession {
   id: string;
   company_id: string;
-  status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+  status: "IN_PROGRESS" | "COMPLETED" | "ABANDONED";
   current_question_number: number;
   total_questions: number;
-  strategic_priorities: Record<string, any>;
-  started_at: string;
-  completed_at?: string | null;
-  questions: InterviewQuestion[];
-  answers: InterviewAnswer[];
+  completion_percentage: number;
+  strategic_priorities?: Record<string, number> | null;
   current_question?: InterviewQuestion | null;
+  created_at: string;
+  updated_at: string;
+  questions: InterviewQuestion[];
+  answers?: InterviewAnswer[];
 }
-
-export type PillarType = "CUSTOMER" | "COMPETITOR" | "MARKET" | "INTERNAL";
-export type SourceType = "RSS" | "WEBPAGE" | "FORUM" | "INTERNAL_DOCUMENT" | "CUSTOM";
-export type ApprovalStatus = "DISCOVERED" | "APPROVED" | "REJECTED" | "PAUSED" | "CUSTOM";
-export type HealthStatus = "HEALTHY" | "WARNING" | "BROKEN" | "AUDITING";
 
 export interface IntelligenceSource {
   id: string;
@@ -86,6 +85,7 @@ export interface IntelligenceSource {
   url: string;
   source_type: SourceType;
   pillar: PillarType;
+  category?: string;
   reason_for_inclusion?: string | null;
   relevance_score: number;
   expected_frequency: string;
@@ -150,11 +150,13 @@ export interface IntelligenceSignal {
 export interface BriefAction {
   id: string;
   brief_id: string;
-  priority: "P0" | "P1" | "P2";
+  priority: "P0" | "P1" | "P2" | string;
   action_text: string;
+  owner?: string | null;
   owner_role?: string | null;
   deadline?: string | null;
-  is_completed: boolean;
+  status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | string;
+  is_completed?: boolean;
   created_at: string;
 }
 
@@ -172,8 +174,20 @@ export interface IntelligenceBrief {
   } | null;
   competitor_movements?: Array<{ competitor: string; observation: string; strategic_impact: string }> | null;
   market_shifts?: Array<{ shift: string; evidence: string; implication: string }> | null;
-  customer_voice?: Array<{ sentiment: string; source: string }> | null;
+  customer_voice?: Array<{ sentiment: string; source: string; evidence?: string }> | null;
   internal_alignment?: Array<{ internal_doc: string; strategic_relevance: string }> | null;
+  opportunities?: Array<{ title: string; evidence: string; impact: string; timeframe: string }> | null;
+  risks_and_threats?: Array<{ risk: string; severity: string; evidence: string; mitigation: string }> | null;
+  what_to_watch?: string[] | null;
+  source_appendix?: Array<{
+    original_source: string;
+    direct_url: string;
+    publication_date: string;
+    discovery_date: string;
+    verification_status: string;
+    evidence_snippet: string;
+  }> | null;
+  status?: string;
   generated_at: string;
   actions: BriefAction[];
 }
@@ -206,29 +220,47 @@ export interface CrawlJob {
 export interface ScheduledJob {
   id: string;
   company_id: string;
-  job_type: string;
+  job_name?: string;
+  job_type?: string;
   cron_expression: string;
+  timezone?: string;
+  briefing_day?: string;
+  briefing_time?: string;
+  monitoring_frequency?: string;
   is_active: boolean;
   last_run_at?: string | null;
   next_run_at?: string | null;
+  last_status?: string | null;
+  last_duration_ms?: number | null;
+  last_error?: string | null;
+  execution_logs?: any[];
+  created_at?: string;
 }
 
 export interface SourceHealthReport {
   id: string;
   company_id: string;
-  audited_at: string;
-  total_sources_checked: number;
+  audit_date?: string;
+  audited_at?: string;
+  total_sources?: number;
+  total_sources_checked?: number;
   healthy_count: number;
   warning_count: number;
   broken_count: number;
+  dead_urls_count?: number;
+  duplicate_sources_count?: number;
+  inactive_sources_count?: number;
   average_latency_ms: number;
+  findings?: any[];
+  recommendations?: any[];
+  created_at?: string;
 }
 
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
   message?: string;
-  timestamp: string;
+  timestamp?: string;
 }
 
 export interface PaginatedResponse<T> {

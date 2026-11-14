@@ -142,7 +142,7 @@ export default function CompanyIntelligencePage() {
                 <h3 className="text-sm font-semibold text-slate-900">Core Strengths & Defensible Moats</h3>
               </div>
               <ul className="space-y-2">
-                {profile.core_strengths.map((str, idx) => (
+                {(profile.core_strengths || []).map((str, idx) => (
                   <li key={idx} className="flex items-start gap-2 text-xs text-slate-700">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0"></span>
                     <span>{str}</span>
@@ -158,7 +158,7 @@ export default function CompanyIntelligencePage() {
                 <h3 className="text-sm font-semibold text-slate-900">Known Weaknesses & Vulnerabilities</h3>
               </div>
               <ul className="space-y-2">
-                {profile.known_weaknesses.map((weak, idx) => (
+                {(profile.known_weaknesses || []).map((weak, idx) => (
                   <li key={idx} className="flex items-start gap-2 text-xs text-slate-700">
                     <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 flex-shrink-0"></span>
                     <span>{weak}</span>
@@ -178,7 +178,7 @@ export default function CompanyIntelligencePage() {
               </div>
               <div className="space-y-3">
                 {profile.raw_research_data?.verified_facts && profile.raw_research_data.verified_facts.length > 0 ? (
-                  profile.raw_research_data.verified_facts.map((fact, idx) => (
+                  profile.raw_research_data.verified_facts.map((fact: any, idx: number) => (
                     <div key={idx} className="p-2.5 rounded-md bg-slate-50 border border-slate-200/60 text-xs space-y-1">
                       <div className="font-semibold text-slate-800">{fact.claim}</div>
                       <div className="text-slate-500 italic">&quot;{fact.quote}&quot;</div>
@@ -206,7 +206,7 @@ export default function CompanyIntelligencePage() {
               </div>
               <div className="space-y-3">
                 {profile.raw_research_data?.inferences && profile.raw_research_data.inferences.length > 0 ? (
-                  profile.raw_research_data.inferences.map((inf, idx) => (
+                  profile.raw_research_data.inferences.map((inf: any, idx: number) => (
                     <div key={idx} className="p-2.5 rounded-md bg-blue-50/40 border border-blue-100 text-xs space-y-1">
                       <div className="font-semibold text-blue-950">{inf.inference}</div>
                       <div className="text-slate-600 text-[11px]">{inf.reasoning}</div>
@@ -229,7 +229,7 @@ export default function CompanyIntelligencePage() {
               </p>
               <div className="space-y-2">
                 {profile.raw_research_data?.unknown_information && profile.raw_research_data.unknown_information.length > 0 ? (
-                  profile.raw_research_data.unknown_information.map((item, idx) => (
+                  profile.raw_research_data.unknown_information.map((item: any, idx: number) => (
                     <div key={idx} className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 p-2 rounded border border-slate-200/50">
                       <span className="w-1.5 h-1.5 rounded-full bg-slate-400 flex-shrink-0"></span>
                       <span>{item}</span>
