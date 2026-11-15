@@ -19,11 +19,21 @@ import {
   Calendar,
   CheckCircle2,
   ChevronRight,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { FeedItemSkeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { formatRelativeTime, formatDateOnly } from "@/lib/utils";
+
+const PILLARS: Array<{ id: PillarType | "ALL"; label: string }> = [
+  { id: "ALL", label: "All Pillars" },
+  { id: "CUSTOMER", label: "Customers" },
+  { id: "COMPETITOR", label: "Competitors" },
+  { id: "MARKET", label: "Market & Policy" },
+];
 
 export default function IntelligenceFeedPage() {
   const { selectedCompany } = useCompany();
@@ -71,7 +81,7 @@ export default function IntelligenceFeedPage() {
       setIsAnalyzing(true);
       const newSignals = await api.analyseSignals(selectedCompany.id);
       await loadSignals();
-      alert(`Analysis completed! Synthesized ${newSignals.length} new signals from crawled documents.`);
+      alert(`Analysis completed: synthesized ${newSignals.length} new signals from crawled documents.`);
     } catch (err: any) {
       alert(`Analysis error: ${err.message}`);
     } finally {
@@ -93,109 +103,114 @@ export default function IntelligenceFeedPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">Intelligence Signal Feed</h1>
             <Badge variant="default" className="text-[11px] font-mono">
-              {totalCount} Total Signals
+              {totalCount} Verified
             </Badge>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Chronological stream of verified market developments, customer signals, and competitor movements.
+          <p className="text-xs text-slate-500 mt-1">
+            Chronological stream of verified market developments, customer feedback, and competitor movements.
           </p>
         </div>
 
         <Button
           size="sm"
+          variant="brand"
           onClick={handleRunAnalysis}
           isLoading={isAnalyzing}
-          className="bg-blue-600 hover:bg-blue-700"
         >
           <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-          Analyze Crawled Documents
+          Analyze Crawled Feeds
         </Button>
       </div>
 
-      {/* Filter Bar */}
-      <div className="bg-white p-3.5 rounded-lg border border-slate-200/90 shadow-card flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Pillar Filter */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-500 font-semibold">Pillar:</span>
-            <select
-              value={selectedPillar}
-              onChange={(e) => setSelectedPillar(e.target.value)}
-              className="h-8 px-2 rounded border border-slate-300 bg-slate-50/50 font-medium text-slate-800"
-            >
-              <option value="ALL">All Categories</option>
-              <option value="CUSTOMER">Customer Voice</option>
-              <option value="COMPETITOR">Competitor Moves</option>
-              <option value="MARKET">Market & Policy</option>
-            </select>
-          </div>
+      {/* Modern Filter Toolbar */}
+      <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-card flex flex-wrap items-center justify-between gap-3 text-xs">
+        {/* Category Pills & Selectors */}
+        <div className="flex flex-wrap items-center gap-2">
+          {PILLARS.map((p) => {
+            const isSelected = selectedPillar === p.id;
+            return (
+              <button
+                key={p.id}
+                onClick={() => setSelectedPillar(p.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  isSelected
+                    ? "bg-slate-900 text-white shadow-subtle"
+                    : "bg-slate-100/80 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                }`}
+              >
+                {p.label}
+              </button>
+            );
+          })}
+
+          <div className="h-5 w-px bg-slate-200 mx-1 hidden sm:block" />
 
           {/* Urgency Filter */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-500 font-semibold">Urgency:</span>
-            <select
-              value={selectedUrgency}
-              onChange={(e) => setSelectedUrgency(e.target.value)}
-              className="h-8 px-2 rounded border border-slate-300 bg-slate-50/50 font-medium text-slate-800"
-            >
-              <option value="ALL">All Levels</option>
-              <option value="CRITICAL">Critical</option>
-              <option value="HIGH">High</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="LOW">Low</option>
-            </select>
-          </div>
+          <select
+            value={selectedUrgency}
+            onChange={(e) => setSelectedUrgency(e.target.value)}
+            className="h-8 px-2.5 rounded-lg border border-slate-300/80 bg-slate-50 text-xs font-semibold text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="ALL">All Urgencies</option>
+            <option value="CRITICAL">Critical</option>
+            <option value="HIGH">High Priority</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low</option>
+          </select>
 
           {/* Min Score Threshold */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-500 font-semibold">Min Score:</span>
-            <select
-              value={minScore}
-              onChange={(e) => setMinScore(Number(e.target.value))}
-              className="h-8 px-2 rounded border border-slate-300 bg-slate-50/50 font-medium text-slate-800"
-            >
-              <option value={0}>All Scores (0+)</option>
-              <option value={60}>60+ Points</option>
-              <option value={75}>75+ Points (High Relevance)</option>
-              <option value={85}>85+ Points (Executive Only)</option>
-            </select>
-          </div>
+          <select
+            value={minScore}
+            onChange={(e) => setMinScore(Number(e.target.value))}
+            className="h-8 px-2.5 rounded-lg border border-slate-300/80 bg-slate-50 text-xs font-semibold text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value={0}>All Scores (0+)</option>
+            <option value={60}>60+ Points</option>
+            <option value={75}>75+ Points (High Relevance)</option>
+            <option value={85}>85+ Points (Executive Only)</option>
+          </select>
         </div>
 
-        {/* Search */}
-        <div className="relative w-full sm:w-60">
+        {/* Search Input */}
+        <div className="relative w-full sm:w-64">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
           <input
             type="text"
             placeholder="Search verified facts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-8 pl-8 pr-3 text-xs rounded border border-slate-300 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full h-8 pl-8 pr-3 text-xs rounded-lg border border-slate-300/80 bg-slate-50/70 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
           />
         </div>
       </div>
 
       {/* Signals Feed List */}
       {isLoading ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs">
-          <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
-          <span>Ranking intelligence signals...</span>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <FeedItemSkeleton key={i} />
+          ))}
         </div>
       ) : filteredSignals.length === 0 ? (
-        <Card className="p-12 text-center space-y-3">
-          <Activity className="w-8 h-8 text-slate-400 mx-auto" />
-          <h3 className="text-sm font-semibold text-slate-800">No signals matching your filters</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            Try adjusting your score filter or click &quot;Analyze Crawled Documents&quot; to process newly ingested data.
-          </p>
-        </Card>
+        <EmptyState
+          icon={Activity}
+          title="No Signals Match Your Filters"
+          description="Adjust your search keywords, lower the minimum score threshold, or run a crawl cycle to ingest new public items."
+          actionLabel="Clear Filters"
+          onAction={() => {
+            setSelectedPillar("ALL");
+            setSelectedUrgency("ALL");
+            setSearchQuery("");
+            setMinScore(0);
+          }}
+        />
       ) : (
         <div className="space-y-3">
           {filteredSignals.map((signal) => {
@@ -206,10 +221,10 @@ export default function IntelligenceFeedPage() {
                 key={signal.id}
                 hoverEffect
                 onClick={() => setActiveSignal(signal)}
-                className="p-5 cursor-pointer border-slate-200/90 transition-all hover:border-blue-300 group"
+                className="p-5 cursor-pointer border-slate-200/90 transition-all hover:border-blue-400/80 group shadow-card"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-2 flex-1">
+                  <div className="space-y-2.5 flex-1 min-w-0">
                     {/* Badges Bar */}
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge
@@ -220,6 +235,7 @@ export default function IntelligenceFeedPage() {
                             ? "danger"
                             : "default"
                         }
+                        withDot
                         className="text-[10px]"
                       >
                         {signal.direction}
@@ -243,14 +259,14 @@ export default function IntelligenceFeedPage() {
                       </Badge>
 
                       {signal.verification_status === "VERIFIED_SOURCE" && (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-medium border border-emerald-200">
+                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md font-medium border border-emerald-200/80">
                           <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          Verified Grounding
+                          Verified Fact
                         </span>
                       )}
 
-                      <span className="text-[11px] font-mono text-slate-400 ml-auto">
-                        Composite Score: {Math.round(signal.ranking_score)}/100
+                      <span className="text-[11px] font-mono text-slate-500 font-semibold ml-auto">
+                        Score: {Math.round(signal.ranking_score)}/100
                       </span>
                     </div>
 
@@ -260,8 +276,8 @@ export default function IntelligenceFeedPage() {
                     </h3>
 
                     {/* Verbatim Fact Grounding */}
-                    <div className="p-2.5 rounded bg-slate-50 border border-slate-200/60 text-xs text-slate-700">
-                      <span className="font-semibold text-slate-900">Verified Evidence: </span>
+                    <div className="p-3 rounded-lg bg-slate-50/80 border border-slate-200/70 text-xs text-slate-800 leading-relaxed font-mono">
+                      <span className="font-semibold text-slate-900 font-sans">Evidence: </span>
                       <span className="italic">&quot;{signal.verified_fact}&quot;</span>
                     </div>
 
@@ -272,17 +288,17 @@ export default function IntelligenceFeedPage() {
                     </p>
 
                     {/* Source Footer */}
-                    <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-400">
+                    <div className="flex flex-wrap items-center gap-2.5 pt-1 text-[11px] text-slate-400">
                       {firstEvidence && (
                         <a
                           href={firstEvidence.source_url}
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="hover:text-blue-600 flex items-center gap-1 font-mono text-slate-500"
+                          className="hover:text-blue-600 flex items-center gap-1 font-mono text-slate-600 transition-colors"
                         >
                           Source: {firstEvidence.source_name || firstEvidence.source_url.replace(/^https?:\/\//, "")}
-                          <ExternalLink className="w-2.5 h-2.5" />
+                          <ExternalLink className="w-3 h-3 text-slate-400" />
                         </a>
                       )}
                       <span>•</span>
@@ -300,11 +316,11 @@ export default function IntelligenceFeedPage() {
 
       {/* Signal Evidence & Traceability Drawer / Modal */}
       {activeSignal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fadeIn">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-modal w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-100 flex items-start justify-between bg-slate-50/50 sticky top-0 bg-white z-10">
-              <div className="space-y-1 pr-4">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-start justify-between bg-slate-50/60 sticky top-0 bg-white z-10">
+              <div className="space-y-1.5 pr-4">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-[10px] font-mono">
                     {activeSignal.pillar}
@@ -317,16 +333,17 @@ export default function IntelligenceFeedPage() {
                         ? "danger"
                         : "default"
                     }
+                    withDot
                     className="text-[10px]"
                   >
                     {activeSignal.direction}
                   </Badge>
                 </div>
-                <h3 className="text-base font-bold text-slate-900">{activeSignal.title}</h3>
+                <h3 className="text-base font-bold text-slate-900 leading-snug">{activeSignal.title}</h3>
               </div>
               <button
                 onClick={() => setActiveSignal(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-md"
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -335,25 +352,28 @@ export default function IntelligenceFeedPage() {
             {/* Modal Body */}
             <div className="p-6 space-y-5 text-xs">
               {/* Ranking Breakdown */}
-              <div className="p-3.5 bg-blue-50/50 border border-blue-100 rounded-lg space-y-2">
-                <div className="flex items-center justify-between font-semibold text-blue-950">
-                  <span>Transparent Signal Ranking Audit</span>
-                  <span className="font-mono text-sm font-bold">{Math.round(activeSignal.ranking_score)}/100</span>
+              <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-xl space-y-2.5">
+                <div className="flex items-center justify-between font-bold text-blue-950">
+                  <span className="flex items-center gap-1.5">
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-blue-600" />
+                    Multi-Factor Signal Score Audit
+                  </span>
+                  <span className="font-mono text-sm font-bold text-blue-700">{Math.round(activeSignal.ranking_score)}/100</span>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-[11px] pt-1">
-                  <div className="p-2 bg-white rounded border border-blue-100/80">
+                <div className="grid grid-cols-3 gap-2.5 text-[11px] pt-1">
+                  <div className="p-2.5 bg-white rounded-lg border border-blue-100/90 shadow-subtle">
                     <div className="text-slate-500 font-medium">Source Reliability</div>
                     <div className="text-slate-900 font-bold font-mono text-xs mt-0.5">
                       {Math.round(activeSignal.source_reliability_score)} pts
                     </div>
                   </div>
-                  <div className="p-2 bg-white rounded border border-blue-100/80">
+                  <div className="p-2.5 bg-white rounded-lg border border-blue-100/90 shadow-subtle">
                     <div className="text-slate-500 font-medium">Evidence Strength</div>
                     <div className="text-slate-900 font-bold font-mono text-xs mt-0.5">
                       {Math.round(activeSignal.evidence_strength_score)} pts
                     </div>
                   </div>
-                  <div className="p-2 bg-white rounded border border-blue-100/80">
+                  <div className="p-2.5 bg-white rounded-lg border border-blue-100/90 shadow-subtle">
                     <div className="text-slate-500 font-medium">Strategic Relevance</div>
                     <div className="text-slate-900 font-bold font-mono text-xs mt-0.5">
                       {Math.round(activeSignal.strategic_relevance_score)} pts
@@ -367,10 +387,10 @@ export default function IntelligenceFeedPage() {
 
               {/* Verified Fact & Evidence Snippet */}
               <div className="space-y-1.5">
-                <span className="font-semibold text-slate-700 uppercase tracking-wider text-[10px]">
-                  Verifiable Evidence Grounding (No Hallucination)
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px] font-mono">
+                  Verified Evidence Grounding (No Hallucination)
                 </span>
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-slate-800 leading-relaxed font-mono text-[11px]">
+                <div className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 text-slate-800 leading-relaxed font-mono text-[11px]">
                   &quot;{activeSignal.verified_fact}&quot;
                 </div>
               </div>
@@ -378,27 +398,29 @@ export default function IntelligenceFeedPage() {
               {/* What Happened */}
               {activeSignal.what_happened && (
                 <div className="space-y-1">
-                  <span className="font-semibold text-slate-700 uppercase tracking-wider text-[10px]">Event Description</span>
-                  <p className="text-slate-700 leading-relaxed">{activeSignal.what_happened}</p>
+                  <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px] font-mono">
+                    Development Summary
+                  </span>
+                  <p className="text-slate-800 leading-relaxed">{activeSignal.what_happened}</p>
                 </div>
               )}
 
               {/* AI Strategic Deduction */}
               <div className="space-y-1">
-                <span className="font-semibold text-slate-700 uppercase tracking-wider text-[10px]">
-                  Executive Interpretation
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px] font-mono">
+                  Strategic Implication
                 </span>
-                <p className="text-slate-800 leading-relaxed bg-slate-50 p-2.5 rounded border border-slate-200/60">
+                <p className="text-slate-800 leading-relaxed bg-slate-50/70 p-3 rounded-xl border border-slate-200/70">
                   {activeSignal.ai_interpretation}
                 </p>
               </div>
 
               {/* Recommended Action */}
               <div className="space-y-1">
-                <span className="font-semibold text-slate-700 uppercase tracking-wider text-[10px]">
-                  Recommended Decision / Action
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px] font-mono">
+                  Recommended Action Item
                 </span>
-                <p className="text-emerald-900 bg-emerald-50/70 p-2.5 rounded border border-emerald-200 leading-relaxed font-medium">
+                <p className="text-emerald-900 bg-emerald-50/80 p-3 rounded-xl border border-emerald-200/80 leading-relaxed font-medium">
                   {activeSignal.recommended_action}
                 </p>
               </div>
@@ -406,19 +428,19 @@ export default function IntelligenceFeedPage() {
               {/* Source Evidence Links */}
               {activeSignal.evidences && activeSignal.evidences.length > 0 && (
                 <div className="space-y-2 pt-2 border-t border-slate-100">
-                  <span className="font-semibold text-slate-700 uppercase tracking-wider text-[10px]">
+                  <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px] font-mono">
                     Traceable Citations
                   </span>
                   {activeSignal.evidences.map((ev) => (
-                    <div key={ev.id} className="flex items-center justify-between p-2 rounded bg-slate-50 border border-slate-200/60">
+                    <div key={ev.id} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50/80 border border-slate-200/70">
                       <span className="text-slate-800 font-medium truncate max-w-sm">{ev.source_name || ev.source_url}</span>
                       <a
                         href={ev.source_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-blue-600 hover:underline flex items-center gap-1 font-mono text-[11px]"
+                        className="text-blue-600 hover:text-blue-800 flex items-center gap-1 font-mono text-[11px] font-semibold"
                       >
-                        Visit Original URL <ExternalLink className="w-3 h-3" />
+                        Visit Original Source <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
                   ))}
@@ -427,7 +449,7 @@ export default function IntelligenceFeedPage() {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex justify-end">
+            <div className="px-6 py-3.5 bg-slate-50/80 border-t border-slate-100 flex justify-end">
               <Button size="sm" variant="outline" onClick={() => setActiveSignal(null)}>
                 Close
               </Button>

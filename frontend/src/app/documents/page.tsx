@@ -15,10 +15,13 @@ import {
   Sparkles,
   Database,
   FileSpreadsheet,
+  FileCode,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { formatRelativeTime } from "@/lib/utils";
 
 export default function InternalDocumentsPage() {
@@ -82,18 +85,18 @@ export default function InternalDocumentsPage() {
   if (!selectedCompany) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">Internal Knowledge Repository</h1>
             <Badge variant="info" className="text-[11px] font-mono">
               ChromaDB Vector Store
             </Badge>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Upload strategy decks, meeting notes, customer surveys, or financial models to ground the Monday Brief in internal facts.
+          <p className="text-xs text-slate-500 mt-1">
+            Upload strategic plans, financial decks, and internal notes to cross-reference public market signals against proprietary company facts.
           </p>
         </div>
       </div>
@@ -104,8 +107,8 @@ export default function InternalDocumentsPage() {
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        className={`p-8 border-2 border-dashed transition-all text-center ${
-          dragActive ? "border-blue-500 bg-blue-50/30" : "border-slate-300 bg-white"
+        className={`p-8 md:p-10 border-2 border-dashed transition-all text-center rounded-2xl shadow-card ${
+          dragActive ? "border-blue-500 bg-blue-50/40" : "border-slate-300 bg-white"
         }`}
       >
         <input
@@ -120,30 +123,37 @@ export default function InternalDocumentsPage() {
           className="hidden"
         />
 
-        <div className="max-w-md mx-auto space-y-3">
-          <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
-            <Upload className="w-6 h-6" />
+        <div className="max-w-md mx-auto space-y-3.5">
+          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-subtle">
+            <Upload className="w-6 h-6 stroke-[1.75]" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-slate-900">
+            <h3 className="text-sm font-bold text-slate-900">
               Drag and drop internal files, or{" "}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="text-blue-600 hover:underline font-bold"
+                className="text-blue-600 hover:text-blue-800 underline font-semibold transition-colors"
               >
                 browse local files
               </button>
             </h3>
             <p className="text-xs text-slate-500">
-              Supports PDF, DOCX, CSV, XLSX, and TXT (up to 25MB per file)
+              Strictly validated: PDF, DOCX, CSV, XLSX, and TXT (up to 25MB ceiling)
             </p>
           </div>
 
+          <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-600 border border-slate-200">.PDF</span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-600 border border-slate-200">.DOCX</span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-600 border border-slate-200">.XLSX</span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-600 border border-slate-200">.CSV</span>
+          </div>
+
           {isUploading && (
-            <div className="flex items-center justify-center gap-2 text-xs text-blue-600 font-medium animate-pulse pt-2">
+            <div className="flex items-center justify-center gap-2 text-xs text-blue-600 font-semibold animate-pulse pt-2">
               <RefreshCw className="w-4 h-4 animate-spin" />
-              <span>Parsing text, extracting chunks, and indexing into vector database...</span>
+              <span>Parsing text, extracting chunks, and indexing embeddings into ChromaDB...</span>
             </div>
           )}
         </div>
@@ -151,51 +161,66 @@ export default function InternalDocumentsPage() {
 
       {/* Uploaded Documents List */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-          <span>Indexed Internal Documents ({documents.length})</span>
-          <span className="text-slate-400 font-mono">Semantic RAG Active</span>
+        <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+          <span>Indexed Internal Knowledge ({documents.length})</span>
+          <span className="text-slate-400 font-mono font-medium">Local Vector Embeddings Active</span>
         </div>
 
         {isLoading ? (
-          <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs">
-            <RefreshCw className="w-5 h-5 animate-spin text-blue-600" />
-            <span>Retrieving indexed files...</span>
+          <div className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="h-9 w-9 rounded-lg" />
+                <div className="space-y-1 flex-1">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-3 w-64" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : documents.length === 0 ? (
-          <Card className="p-8 text-center text-xs text-slate-400">
-            No internal documents uploaded yet. Upload your FY2026 Strategy Plan or Student Churn CSV above to provide ground truth.
-          </Card>
+          <EmptyState
+            icon={FolderOpen}
+            title="No Internal Documents Uploaded Yet"
+            description="Upload internal strategy files, board slides, or financial spreadsheets above to ground the weekly brief in proprietary facts."
+            actionLabel="Select Document"
+            actionIcon={Upload}
+            onAction={() => fileInputRef.current?.click()}
+          />
         ) : (
-          <div className="divide-y divide-slate-100 bg-white rounded-lg border border-slate-200 shadow-card">
+          <div className="divide-y divide-slate-100 bg-white rounded-xl border border-slate-200/80 shadow-card overflow-hidden">
             {documents.map((doc) => {
               const sizeKb = Math.round(doc.file_size_bytes / 1024);
               const isSpreadsheet = doc.file_type === "CSV" || doc.file_type === "XLSX";
 
               return (
-                <div key={doc.id} className="p-4 flex items-start justify-between gap-4 hover:bg-slate-50 transition-colors">
-                  <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center flex-shrink-0 mt-0.5 border border-slate-200">
-                      {isSpreadsheet ? <FileSpreadsheet className="w-5 h-5 text-emerald-600" /> : <FileText className="w-5 h-5 text-blue-600" />}
+                <div key={doc.id} className="p-4 md:p-5 flex items-start justify-between gap-4 hover:bg-slate-50/80 transition-colors">
+                  <div className="flex items-start gap-3.5 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center flex-shrink-0 mt-0.5 border border-slate-200/80 shadow-subtle">
+                      {isSpreadsheet ? (
+                        <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+                      ) : (
+                        <FileText className="w-5 h-5 text-blue-600" />
+                      )}
                     </div>
 
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-xs text-slate-900">{doc.filename}</span>
+                    <div className="space-y-1.5 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-xs text-slate-900 truncate">{doc.filename}</span>
                         <Badge variant="outline" className="text-[10px] font-mono">
                           {doc.file_type}
                         </Badge>
-                        <Badge variant="success" className="text-[10px] font-mono flex items-center gap-1">
-                          <CheckCircle2 className="w-2.5 h-2.5" />
+                        <Badge variant="success" withDot className="text-[10px] font-mono">
                           INDEXED
                         </Badge>
                       </div>
 
-                      <p className="text-xs text-slate-600 line-clamp-2 italic">
-                        {doc.summary || "Internal document parsed and semantically chunked."}
+                      <p className="text-xs text-slate-600 line-clamp-2 italic leading-relaxed">
+                        {doc.summary || "Internal document parsed and semantically chunked into vector embeddings."}
                       </p>
 
-                      <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono pt-0.5">
-                        <span>{sizeKb} KB</span>
+                      <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-slate-400 font-mono pt-0.5">
+                        <span className="text-slate-600 font-semibold">{sizeKb} KB</span>
                         <span>•</span>
                         <span>{doc.chunk_count} Vector Chunks</span>
                         <span>•</span>
@@ -205,9 +230,9 @@ export default function InternalDocumentsPage() {
                   </div>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <Badge variant="neutral" className="text-[10px] font-mono">
-                      ChromaDB: Ready
-                    </Badge>
+                    <span className="text-[11px] font-mono text-slate-400 hidden sm:inline">
+                      Vectorized
+                    </span>
                   </div>
                 </div>
               );

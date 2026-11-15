@@ -29,6 +29,8 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { BriefSkeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDateTime, formatDateOnly } from "@/lib/utils";
 
 export default function MondayBriefPage() {
@@ -155,22 +157,16 @@ export default function MondayBriefPage() {
       </div>
 
       {isLoading ? (
-        <div className="py-20 text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600 mb-3" />
-          <p className="text-sm text-slate-500">Loading intelligence briefings...</p>
-        </div>
+        <BriefSkeleton />
       ) : !selectedBrief ? (
-        <Card className="text-center py-16">
-          <FileText className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-800">No Briefing Generated Yet</h3>
-          <p className="text-sm text-slate-500 max-w-md mx-auto mt-1 mb-5">
-            Signal Stack compiles weekly executive briefs every Monday morning from ranked crawl signals and internal strategy files.
-          </p>
-          <Button onClick={() => handleGenerateBrief(false)} disabled={isGenerating}>
-            <Sparkles className="h-4 w-4 mr-2" />
-            {isGenerating ? "Generating..." : "Generate Monday Brief Now"}
-          </Button>
-        </Card>
+        <EmptyState
+          icon={FileText}
+          title="No Monday Briefing Generated Yet"
+          description="Signal Stack compiles weekly executive briefs every Monday morning from ranked crawl signals and internal strategy files."
+          actionLabel={isGenerating ? "Synthesizing Brief..." : "Generate Monday Brief Now"}
+          actionIcon={Sparkles}
+          onAction={() => handleGenerateBrief(false)}
+        />
       ) : (
         <div className="space-y-6">
           {/* Brief Selection Selector Bar */}

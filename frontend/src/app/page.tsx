@@ -23,10 +23,14 @@ import {
   Sparkles,
   CheckCircle2,
   Clock,
+  Compass,
+  Radio,
 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Skeleton, StatCardSkeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { formatRelativeTime } from "@/lib/utils";
 import {
   BarChart,
@@ -35,10 +39,23 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
+  CartesianGrid,
 } from "recharts";
+
+// Custom dark styled tooltip for Recharts
+function CustomTooltip({ active, payload, label }: any) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 shadow-dropdown border border-slate-800 space-y-1">
+        <p className="font-semibold text-slate-200">{label}</p>
+        <p className="text-blue-400 font-mono">
+          {payload[0].value} {payload[0].value === 1 ? "Signal" : "Signals"}
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
 
 export default function DashboardOverviewPage() {
   const { selectedCompany, isLoading: isCompanyLoading } = useCompany();
@@ -78,10 +95,12 @@ export default function DashboardOverviewPage() {
 
   if (isCompanyLoading || !selectedCompany) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-2">
-          <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
-          <span className="text-sm font-medium text-slate-500">Loading company intelligence telemetry...</span>
+      <div className="space-y-6">
+        <div className="h-28 bg-white rounded-xl border border-slate-200 p-6 animate-pulse" />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
         </div>
       </div>
     );
@@ -101,135 +120,151 @@ export default function DashboardOverviewPage() {
     MARKET: signals.filter((s) => s.pillar === "MARKET").length,
   };
   const pillarChartData = [
-    { name: "Customers", count: pillarCounts.CUSTOMER, color: "#2563EB" },
-    { name: "Competitors", count: pillarCounts.COMPETITOR, color: "#EA580C" },
-    { name: "Market & Policy", count: pillarCounts.MARKET, color: "#059669" },
+    { name: "Customers", count: pillarCounts.CUSTOMER, fill: "#2563EB" },
+    { name: "Competitors", count: pillarCounts.COMPETITOR, fill: "#EA580C" },
+    { name: "Market & Policy", count: pillarCounts.MARKET, fill: "#059669" },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* 1. Executive Company Banner */}
+    <div className="space-y-6 animate-fade-in">
+      {/* 1. Executive Organization Banner */}
       <div className="bg-white rounded-xl border border-slate-200/90 shadow-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">{selectedCompany.name}</h1>
-            <Badge variant="default" className="font-mono text-[11px]">
+            <Badge variant="success" withDot className="font-mono text-[10px]">
               {selectedCompany.onboarding_status.replace(/_/g, " ")}
             </Badge>
           </div>
-          <div className="flex items-center gap-3 text-xs text-slate-500">
+          <div className="flex flex-wrap items-center gap-2.5 text-xs text-slate-500">
             <a
               href={selectedCompany.website_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-blue-600 flex items-center gap-1 font-mono text-slate-600"
+              className="hover:text-blue-600 flex items-center gap-1 font-mono text-slate-700 transition-colors"
             >
-              {selectedCompany.website_url}
-              <ExternalLink className="w-3 h-3" />
+              {selectedCompany.website_url.replace(/^https?:\/\//, "")}
+              <ExternalLink className="w-3 h-3 text-slate-400" />
             </a>
-            <span>•</span>
-            <span>{selectedCompany.industry || "Enterprise Technology"}</span>
-            <span>•</span>
-            <span>{selectedCompany.geography || "Global"}</span>
+            <span className="text-slate-300">•</span>
+            <span className="font-medium text-slate-600">{selectedCompany.industry || "Enterprise Technology"}</span>
+            <span className="text-slate-300">•</span>
+            <span className="text-slate-500">{selectedCompany.geography || "Global Focus"}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <Link href="/interview">
             <Button variant="outline" size="sm">
-              <Sparkles className="w-3.5 h-3.5 text-blue-600 mr-1" />
+              <Sparkles className="w-3.5 h-3.5 text-blue-600 mr-1.5" />
               Strategic Calibration
             </Button>
           </Link>
           <Link href="/briefs">
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-              <FileText className="w-3.5 h-3.5 mr-1" />
-              View Monday Brief
+            <Button size="sm" variant="brand">
+              <FileText className="w-3.5 h-3.5 mr-1.5" />
+              Monday Brief
             </Button>
           </Link>
         </div>
       </div>
 
       {/* 2. Key Telemetry Metrics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {/* Monitored Sources */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Total Sources</span>
-            <Layers className="w-4 h-4 text-slate-400" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900">{sources.length}</div>
-          <div className="text-[11px] text-emerald-600 font-medium mt-1">
-            {activeSources.length} Approved & Active
-          </div>
-        </Card>
+      {isLoadingData ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {/* Monitored Sources */}
+          <Card className="p-4" hoverEffect>
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">Sources</span>
+              <Layers className="w-4 h-4 text-slate-400" />
+            </div>
+            <div className="text-2xl font-bold text-slate-900 font-mono tracking-tight">{sources.length}</div>
+            <div className="text-[11px] text-emerald-700 font-semibold mt-1">
+              {activeSources.length} Approved Feeds
+            </div>
+          </Card>
 
-        {/* Total Signals */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Signals</span>
-            <Activity className="w-4 h-4 text-blue-500" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900">{signals.length}</div>
-          <div className="text-[11px] text-slate-500 font-medium mt-1">Ranked & Verified</div>
-        </Card>
+          {/* Total Signals */}
+          <Card className="p-4" hoverEffect>
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">Signals</span>
+              <Activity className="w-4 h-4 text-blue-600" />
+            </div>
+            <div className="text-2xl font-bold text-slate-900 font-mono tracking-tight">{signals.length}</div>
+            <div className="text-[11px] text-slate-500 font-medium mt-1">Ranked & Verified</div>
+          </Card>
 
-        {/* High Priority Urgency */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">High Priority</span>
-            <AlertTriangle className="w-4 h-4 text-rose-500" />
-          </div>
-          <div className="text-2xl font-bold text-rose-600">{highPriority}</div>
-          <div className="text-[11px] text-rose-600/80 font-medium mt-1">Immediate Attention</div>
-        </Card>
+          {/* High Priority Urgency */}
+          <Card className="p-4" hoverEffect>
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">High Urgency</span>
+              <AlertTriangle className="w-4 h-4 text-rose-500" />
+            </div>
+            <div className="text-2xl font-bold text-rose-600 font-mono tracking-tight">{highPriority}</div>
+            <div className="text-[11px] text-rose-700 font-medium mt-1">Immediate Watch</div>
+          </Card>
 
-        {/* Opportunities */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Opportunities</span>
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
-          </div>
-          <div className="text-2xl font-bold text-emerald-600">{opportunities}</div>
-          <div className="text-[11px] text-emerald-600 font-medium mt-1">Growth Vectors</div>
-        </Card>
+          {/* Opportunities */}
+          <Card className="p-4" hoverEffect>
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">Opportunities</span>
+              <TrendingUp className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div className="text-2xl font-bold text-emerald-600 font-mono tracking-tight">{opportunities}</div>
+            <div className="text-[11px] text-emerald-700 font-medium mt-1">Growth Vectors</div>
+          </Card>
 
-        {/* Threats */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Threats</span>
-            <ShieldCheck className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="text-2xl font-bold text-amber-600">{threats}</div>
-          <div className="text-[11px] text-amber-700 font-medium mt-1">Defensive Watch</div>
-        </Card>
+          {/* Threats */}
+          <Card className="p-4" hoverEffect>
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">Threats</span>
+              <ShieldCheck className="w-4 h-4 text-amber-500" />
+            </div>
+            <div className="text-2xl font-bold text-amber-600 font-mono tracking-tight">{threats}</div>
+            <div className="text-[11px] text-amber-700 font-medium mt-1">Defensive Watch</div>
+          </Card>
 
-        {/* Crawl Status */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Crawler Telemetry</span>
-            <RefreshCw className="w-4 h-4 text-slate-400" />
-          </div>
-          <div className="text-lg font-bold text-slate-900 truncate">
-            {latestCrawl ? latestCrawl.status : "READY"}
-          </div>
-          <div className="text-[11px] text-slate-500 font-medium mt-1 truncate">
-            {latestCrawl ? `${latestCrawl.items_crawled} items checked` : "No crawls yet"}
-          </div>
-        </Card>
-      </div>
+          {/* Crawl Status */}
+          <Card className="p-4" hoverEffect>
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">Crawler</span>
+              <RefreshCw className="w-4 h-4 text-slate-400" />
+            </div>
+            <div className="text-base font-bold text-slate-900 truncate">
+              {latestCrawl ? latestCrawl.status : "READY"}
+            </div>
+            <div className="text-[11px] text-slate-500 font-medium mt-1 truncate">
+              {latestCrawl ? `${latestCrawl.items_crawled} items checked` : "Ready to monitor"}
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* 3. Middle Section: Upcoming Brief Card + Telemetry Visualizations */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Monday Brief Executive Preview */}
-        <div className="lg:col-span-2 space-y-4">
-          <Card className="p-5 border-l-4 border-l-blue-600">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-blue-600" />
-                <h3 className="text-sm font-bold text-slate-900">
-                  {latestBrief ? latestBrief.title : `Monday Morning Executive Brief — ${selectedCompany.name}`}
-                </h3>
+        {/* Left 2 Cols: Monday Brief Executive Preview & Feed */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Executive Brief Hero Card */}
+          <Card className="p-6 border-l-4 border-l-blue-600 shadow-card">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-md bg-blue-50 text-blue-700 flex items-center justify-center">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    {latestBrief ? latestBrief.title : `Monday Morning Executive Brief — ${selectedCompany.name}`}
+                  </h3>
+                  <span className="text-[11px] text-slate-500">
+                    {latestBrief ? `Generated: ${formatRelativeTime(latestBrief.generated_at)}` : "Autonomous weekly briefing"}
+                  </span>
+                </div>
               </div>
               <Badge variant="info" className="font-mono text-[10px]">
                 {latestBrief ? latestBrief.brief_week : "UPCOMING"}
@@ -237,86 +272,94 @@ export default function DashboardOverviewPage() {
             </div>
 
             <div className="py-4 space-y-3">
-              <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Executive TL;DR</h4>
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+                Executive Synthesis
+              </div>
               {latestBrief?.executive_tldr && latestBrief.executive_tldr.length > 0 ? (
-                <ul className="space-y-2">
+                <ul className="space-y-2.5">
                   {latestBrief.executive_tldr.map((bullet, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 leading-relaxed">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 flex-shrink-0"></span>
+                    <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-700 leading-relaxed">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 flex-shrink-0" />
                       <span>{bullet}</span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-slate-500 italic">
+                <p className="text-xs text-slate-500 italic py-2">
                   Autonomous synthesis will compile this Monday at 06:00 AM, or you can trigger an on-demand brief immediately.
                 </p>
               )}
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-[11px] text-slate-400">
-                {latestBrief ? `Generated: ${formatRelativeTime(latestBrief.generated_at)}` : "Grounded in crawled evidence & RAG"}
+            <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                100% Traceable Evidence & RAG Cross-Referenced
               </span>
               <Link href="/briefs">
                 <Button size="sm" variant="outline" className="text-xs">
-                  Open Complete Briefing
-                  <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  Read Full Brief
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                 </Button>
               </Link>
             </div>
           </Card>
 
-          {/* Recent Signals List */}
-          <Card className="p-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+          {/* Recent Signals Feed */}
+          <Card className="p-6 shadow-card">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-2">
               <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-slate-600" />
-                <h3 className="text-sm font-semibold text-slate-900">Recent Ranked Intelligence Signals</h3>
+                <Activity className="w-4 h-4 text-slate-700" />
+                <h3 className="text-sm font-bold text-slate-900">Recent Ranked Intelligence Signals</h3>
               </div>
-              <Link href="/signals" className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-medium">
+              <Link href="/signals" className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 font-semibold transition-colors">
                 View All Signals
                 <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
 
             {signals.length === 0 ? (
-              <div className="text-center py-8 text-slate-400 text-xs">
-                No signals discovered yet. Run a crawl cycle from the top navbar to populate intelligence feeds.
-              </div>
+              <EmptyState
+                icon={Activity}
+                title="No Intelligence Signals Yet"
+                description="Trigger a crawl cycle from the top navigation bar or run autonomous source discovery to populate verified intelligence feeds."
+                actionLabel="Explore Signal Stack"
+                onAction={() => {}}
+              />
             ) : (
               <div className="divide-y divide-slate-100">
                 {signals.slice(0, 5).map((sig) => (
-                  <div key={sig.id} className="py-3 flex items-start justify-between gap-3 group">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                  <div key={sig.id} className="py-3.5 flex items-start justify-between gap-4 group">
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Badge
                           variant={
                             sig.direction === "OPPORTUNITY"
                               ? "success"
                               : sig.direction === "THREAT"
                               ? "danger"
-                              : "default"
+                              : "neutral"
                           }
+                          withDot
                           className="text-[10px]"
                         >
                           {sig.direction}
                         </Badge>
-                        <Badge variant="outline" className="text-[10px]">
+                        <Badge variant="outline" className="text-[10px] font-mono">
                           {sig.pillar}
                         </Badge>
-                        <span className="text-[11px] text-slate-400 font-mono">
+                        <span className="text-[11px] text-slate-500 font-mono font-semibold">
                           Score: {Math.round(sig.ranking_score)}/100
                         </span>
                       </div>
-                      <h4 className="text-xs font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                      <h4 className="text-xs font-semibold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
                         {sig.title}
                       </h4>
-                      <p className="text-xs text-slate-600 line-clamp-1 italic">
+                      <p className="text-xs text-slate-600 line-clamp-1 italic bg-slate-50/60 px-2 py-1 rounded border border-slate-100">
                         &quot;{sig.verified_fact}&quot;
                       </p>
                     </div>
-                    <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                    <span className="text-[10px] text-slate-400 font-mono whitespace-nowrap pt-0.5">
                       {formatRelativeTime(sig.created_at)}
                     </span>
                   </div>
@@ -327,43 +370,46 @@ export default function DashboardOverviewPage() {
         </div>
 
         {/* Right Col: Pillar Distribution & Source Health */}
-        <div className="space-y-4">
-          <Card className="p-5">
-            <CardHeader className="p-0 pb-3 mb-3">
-              <CardTitle className="text-sm font-semibold">Intelligence Signal Distribution</CardTitle>
-              <CardDescription className="text-xs">Signals categorized by source pillar</CardDescription>
+        <div className="space-y-6">
+          {/* Signal Pillar Distribution Chart */}
+          <Card className="p-5 shadow-card">
+            <CardHeader className="p-0 pb-3 mb-2">
+              <CardTitle className="text-sm font-bold">Signal Pillar Distribution</CardTitle>
+              <CardDescription className="text-xs">Signals categorized by source origin</CardDescription>
             </CardHeader>
-            <div className="h-48 w-full">
+            <div className="h-44 w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={pillarChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#2563EB" radius={[4, 4, 0, 0]} />
+                <BarChart data={pillarChartData} margin={{ top: 8, right: 8, left: -22, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#64748b" }} axisLine={{ stroke: "#e2e8f0" }} />
+                  <YAxis tick={{ fontSize: 10, fill: "#64748b" }} allowDecimals={false} axisLine={{ stroke: "#e2e8f0" }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </Card>
 
-          <Card className="p-5">
-            <CardHeader className="p-0 pb-3 mb-3">
-              <CardTitle className="text-sm font-semibold">Source Stack Health</CardTitle>
-              <CardDescription className="text-xs">Uptime & latency audit status</CardDescription>
+          {/* Source Stack Telemetry Card */}
+          <Card className="p-5 shadow-card space-y-3">
+            <CardHeader className="p-0 pb-2 mb-1">
+              <CardTitle className="text-sm font-bold">Source Stack Telemetry</CardTitle>
+              <CardDescription className="text-xs">Continuous monitoring and latency status</CardDescription>
             </CardHeader>
-            <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between p-2 rounded-md bg-slate-50 border border-slate-200/60">
-                <span className="text-slate-600">Discovered Sources</span>
-                <span className="font-semibold text-slate-900">{sources.length}</span>
+            <div className="space-y-2.5 text-xs">
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50/80 border border-slate-200/70">
+                <span className="text-slate-600 font-medium">Discovered Feeds</span>
+                <span className="font-bold text-slate-900 font-mono">{sources.length}</span>
               </div>
-              <div className="flex items-center justify-between p-2 rounded-md bg-emerald-50/60 border border-emerald-100">
-                <span className="text-emerald-800">Approved Feeds</span>
-                <span className="font-semibold text-emerald-800">{activeSources.length}</span>
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-50/70 border border-emerald-100">
+                <span className="text-emerald-900 font-medium">Active & Approved</span>
+                <span className="font-bold text-emerald-900 font-mono">{activeSources.length}</span>
               </div>
-              <div className="flex items-center justify-between p-2 rounded-md bg-slate-50 border border-slate-200/60">
-                <span className="text-slate-600">Avg Response Latency</span>
-                <span className="font-semibold text-slate-900 font-mono">180ms</span>
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50/80 border border-slate-200/70">
+                <span className="text-slate-600 font-medium">Response Latency</span>
+                <span className="font-bold text-slate-900 font-mono">180ms</span>
               </div>
-              <Link href="/sources" className="block pt-2">
+              <Link href="/sources" className="block pt-1">
                 <Button variant="outline" size="sm" className="w-full text-xs">
                   Manage Source Stack
                 </Button>

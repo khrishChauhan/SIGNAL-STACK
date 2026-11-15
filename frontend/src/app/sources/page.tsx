@@ -19,6 +19,8 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { formatRelativeTime } from "@/lib/utils";
 
 export default function SourceManagerPage() {
@@ -72,18 +74,18 @@ export default function SourceManagerPage() {
   if (!selectedCompany) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">Source Manager & Telemetry</h1>
             <Badge variant="default" className="text-[11px] font-mono">
               {sources.length} Total Feeds
             </Badge>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Low-level endpoint configuration, expected frequency, uptime diagnostics, and source health audit.
+          <p className="text-xs text-slate-500 mt-1">
+            Low-level endpoint configuration, polling frequency, latency diagnostics, and health audit logs.
           </p>
         </div>
 
@@ -92,70 +94,78 @@ export default function SourceManagerPage() {
           size="sm"
           onClick={handleAuditSources}
           isLoading={isAuditing}
-          className="border-slate-300"
         >
-          <Activity className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+          <Activity className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
           Run Health & Latency Audit
         </Button>
       </div>
 
       {/* Main Table */}
       {isLoading ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs">
-          <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
-          <span>Polling source health telemetry...</span>
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-card overflow-hidden">
+          <table className="w-full text-left text-xs">
+            <tbody className="divide-y divide-slate-100">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <TableRowSkeleton key={i} columns={8} />
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : sources.length === 0 ? (
-        <Card className="p-12 text-center text-xs text-slate-400">
-          No sources registered in stack. Visit the &quot;Signal Stack&quot; tab to discover sources.
-        </Card>
+        <EmptyState
+          icon={SlidersHorizontal}
+          title="No Sources In Current Stack"
+          description="Visit the Signal Stack tab to auto-discover 20+ specialized feeds or register custom intelligence endpoints."
+          actionLabel="Go to Signal Stack"
+          onAction={() => (window.location.href = "/sources/stack")}
+        />
       ) : (
-        <div className="bg-white rounded-lg border border-slate-200 shadow-card overflow-hidden">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+              <thead className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 font-semibold uppercase tracking-wider text-[10px] font-mono">
                 <tr>
-                  <th className="py-3 px-4">Source Name</th>
-                  <th className="py-3 px-4">Pillar</th>
-                  <th className="py-3 px-4">Protocol</th>
-                  <th className="py-3 px-4">Reliability</th>
-                  <th className="py-3 px-4">Health Status</th>
-                  <th className="py-3 px-4">Frequency</th>
-                  <th className="py-3 px-4">Latency</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  <th className="py-3.5 px-4">Source Name</th>
+                  <th className="py-3.5 px-4">Pillar</th>
+                  <th className="py-3.5 px-4">Protocol</th>
+                  <th className="py-3.5 px-4">Reliability</th>
+                  <th className="py-3.5 px-4">Health Status</th>
+                  <th className="py-3.5 px-4">Frequency</th>
+                  <th className="py-3.5 px-4">Latency</th>
+                  <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {sources.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-4">
+                  <tr key={s.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-3.5 px-4">
                       <div className="font-semibold text-slate-900">{s.name}</div>
                       <a
                         href={s.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[11px] text-slate-400 hover:text-blue-600 flex items-center gap-1 font-mono truncate max-w-xs"
+                        className="text-[11px] text-slate-400 hover:text-blue-600 flex items-center gap-1 font-mono truncate max-w-xs transition-colors"
                       >
                         {s.url.replace(/^https?:\/\//, "")}
                         <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
                       </a>
                     </td>
 
-                    <td className="py-3 px-4">
+                    <td className="py-3.5 px-4">
                       <Badge variant="outline" className="text-[10px] font-mono">
                         {s.pillar}
                       </Badge>
                     </td>
 
-                    <td className="py-3 px-4 font-mono text-[11px] text-slate-600">
+                    <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600">
                       {s.source_type}
                     </td>
 
-                    <td className="py-3 px-4 font-mono font-semibold text-slate-800">
+                    <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
                       {Math.round(s.reliability_score * 100)}%
                     </td>
 
-                    <td className="py-3 px-4">
+                    <td className="py-3.5 px-4">
                       <Badge
                         variant={
                           s.health_status === "HEALTHY"
@@ -164,24 +174,25 @@ export default function SourceManagerPage() {
                             ? "warning"
                             : "danger"
                         }
+                        withDot
                         className="text-[10px] font-mono"
                       >
                         {s.health_status}
                       </Badge>
                     </td>
 
-                    <td className="py-3 px-4 font-mono text-slate-600 text-[11px]">
+                    <td className="py-3.5 px-4 font-mono text-slate-600 text-[11px]">
                       {s.expected_frequency}
                     </td>
 
-                    <td className="py-3 px-4 font-mono text-slate-500 text-[11px]">
+                    <td className="py-3.5 px-4 font-mono text-slate-700 font-semibold text-[11px]">
                       {s.latency_ms > 0 ? `${s.latency_ms}ms` : "180ms"}
                     </td>
 
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3.5 px-4 text-right">
                       <button
                         onClick={() => handleDeleteSource(s.id)}
-                        className="p-1 text-rose-500 hover:bg-rose-50 rounded"
+                        className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
                         title="Delete Source"
                       >
                         <Trash2 className="w-4 h-4" />

@@ -12,6 +12,8 @@ interface CompanyContextType {
   refreshCompanies: () => Promise<void>;
   isNewCompanyModalOpen: boolean;
   setIsNewCompanyModalOpen: (open: boolean) => void;
+  isMobileNavOpen: boolean;
+  setIsMobileNavOpen: (open: boolean) => void;
 }
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
@@ -21,6 +23,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isNewCompanyModalOpen, setIsNewCompanyModalOpen] = useState<boolean>(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState<boolean>(false);
 
   const refreshCompanies = async () => {
     try {
@@ -61,6 +64,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         refreshCompanies,
         isNewCompanyModalOpen,
         setIsNewCompanyModalOpen,
+        isMobileNavOpen,
+        setIsMobileNavOpen,
       }}
     >
       {children}
