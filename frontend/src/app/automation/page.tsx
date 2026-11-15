@@ -80,14 +80,18 @@ export default function AutomationPage() {
         api.getCrawlHistory(selectedCompany.id),
         api.listSourceAudits(selectedCompany.id),
       ]);
-      setSchedules(schedList);
-      setCrawlHistory(history);
-      if (audits && audits.length > 0) {
-        setLatestAudit(audits[0]);
+      const safeSchedList = Array.isArray(schedList) ? schedList : [];
+      const safeHistory = Array.isArray(history) ? history : [];
+      const safeAudits = Array.isArray(audits) ? audits : [];
+
+      setSchedules(safeSchedList);
+      setCrawlHistory(safeHistory);
+      if (safeAudits.length > 0) {
+        setLatestAudit(safeAudits[0]);
       }
 
       // Populate config fields from weekly job if present
-      const weeklyJob = schedList.find(
+      const weeklyJob = safeSchedList.find(
         (s) => (s.job_name || s.job_type) === "WEEKLY_BRIEF"
       );
       if (weeklyJob) {

@@ -176,7 +176,24 @@ export const api = {
     params.append("page", (filters?.page || 1).toString());
     params.append("limit", (filters?.limit || 20).toString());
     const res = await fetch(`${BASE_URL}/api/companies/${companyId}/signals?${params.toString()}`);
-    return handleResponse<PaginatedResponse<IntelligenceSignal>>(res);
+    if (!res.ok) {
+      let errorDetail = `HTTP ${res.status}: ${res.statusText}`;
+      try {
+        const errJson = await res.json();
+        errorDetail = errJson.detail || errJson.message || errorDetail;
+      } catch {}
+      throw new Error(errorDetail);
+    }
+    const json = await res.json();
+    const items = Array.isArray(json.data) ? json.data : (Array.isArray(json.items) ? json.items : []);
+    const pagination = json.pagination || {};
+    return {
+      items,
+      total: pagination.total ?? items.length,
+      page: pagination.page ?? 1,
+      limit: pagination.limit ?? 20,
+      total_pages: pagination.total_pages ?? 1,
+    };
   },
 
   async getSignal(signalId: string): Promise<IntelligenceSignal> {

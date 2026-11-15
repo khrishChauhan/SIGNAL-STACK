@@ -42,7 +42,7 @@ export default function InternalDocumentsPage() {
     try {
       setIsLoading(true);
       const list = await api.listDocuments(selectedCompany.id);
-      setDocuments(list);
+      setDocuments(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error("Failed to load documents:", err);
     } finally {

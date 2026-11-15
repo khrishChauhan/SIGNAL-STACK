@@ -51,11 +51,12 @@ export default function MondayBriefPage() {
     try {
       setIsLoading(true);
       const list = await api.listBriefs(selectedCompany.id);
-      setBriefs(list);
-      if (list.length > 0) {
-        setSelectedBrief(list[0]);
+      const safeList = Array.isArray(list) ? list : [];
+      setBriefs(safeList);
+      if (safeList.length > 0) {
+        setSelectedBrief(safeList[0]);
         const initialStates: Record<string, boolean> = {};
-        list[0].actions?.forEach((a) => {
+        safeList[0].actions?.forEach((a) => {
           initialStates[a.id] = a.status === "COMPLETED" || a.is_completed === true;
         });
         setActionStates(initialStates);

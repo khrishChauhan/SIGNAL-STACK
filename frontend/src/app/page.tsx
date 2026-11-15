@@ -79,10 +79,19 @@ export default function DashboardOverviewPage() {
           api.listBriefs(selectedCompany!.id),
         ]);
 
-        setSources(sourceList);
-        setSignals(signalRes.items);
-        setCrawlJobs(jobs);
-        setLatestBrief(briefs.length > 0 ? briefs[0] : null);
+        const safeSources = Array.isArray(sourceList) ? sourceList : [];
+        const safeSignals = Array.isArray(signalRes?.items)
+          ? signalRes.items
+          : Array.isArray(signalRes)
+          ? signalRes
+          : [];
+        const safeJobs = Array.isArray(jobs) ? jobs : [];
+        const safeBriefs = Array.isArray(briefs) ? briefs : [];
+
+        setSources(safeSources);
+        setSignals(safeSignals);
+        setCrawlJobs(safeJobs);
+        setLatestBrief(safeBriefs.length > 0 ? safeBriefs[0] : null);
       } catch (err) {
         console.error("Error loading dashboard data:", err);
       } finally {
@@ -106,18 +115,23 @@ export default function DashboardOverviewPage() {
     );
   }
 
+  // Defensive array access
+  const safeSignals = Array.isArray(signals) ? signals : [];
+  const safeSources = Array.isArray(sources) ? sources : [];
+  const safeJobs = Array.isArray(crawlJobs) ? crawlJobs : [];
+
   // Calculated Metrics
-  const activeSources = sources.filter((s) => s.approval_status === "APPROVED" || s.approval_status === "CUSTOM");
-  const opportunities = signals.filter((s) => s.direction === "OPPORTUNITY").length;
-  const threats = signals.filter((s) => s.direction === "THREAT").length;
-  const highPriority = signals.filter((s) => s.urgency === "HIGH" || s.urgency === "CRITICAL").length;
-  const latestCrawl = crawlJobs.length > 0 ? crawlJobs[0] : null;
+  const activeSources = safeSources.filter((s) => s.approval_status === "APPROVED" || s.approval_status === "CUSTOM");
+  const opportunities = safeSignals.filter((s) => s.direction === "OPPORTUNITY").length;
+  const threats = safeSignals.filter((s) => s.direction === "THREAT").length;
+  const highPriority = safeSignals.filter((s) => s.urgency === "HIGH" || s.urgency === "CRITICAL").length;
+  const latestCrawl = safeJobs.length > 0 ? safeJobs[0] : null;
 
   // Chart Data: Pillar distribution
   const pillarCounts = {
-    CUSTOMER: signals.filter((s) => s.pillar === "CUSTOMER").length,
-    COMPETITOR: signals.filter((s) => s.pillar === "COMPETITOR").length,
-    MARKET: signals.filter((s) => s.pillar === "MARKET").length,
+    CUSTOMER: safeSignals.filter((s) => s.pillar === "CUSTOMER").length,
+    COMPETITOR: safeSignals.filter((s) => s.pillar === "COMPETITOR").length,
+    MARKET: safeSignals.filter((s) => s.pillar === "MARKET").length,
   };
   const pillarChartData = [
     { name: "Customers", count: pillarCounts.CUSTOMER, fill: "#2563EB" },
@@ -184,7 +198,7 @@ export default function DashboardOverviewPage() {
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">Sources</span>
               <Layers className="w-4 h-4 text-slate-400" />
             </div>
-            <div className="text-2xl font-bold text-slate-900 font-mono tracking-tight">{sources.length}</div>
+            <div className="text-2xl font-bold text-slate-900 font-mono tracking-tight">{safeSources.length}</div>
             <div className="text-[11px] text-emerald-700 font-semibold mt-1">
               {activeSources.length} Approved Feeds
             </div>
@@ -196,7 +210,7 @@ export default function DashboardOverviewPage() {
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">Signals</span>
               <Activity className="w-4 h-4 text-blue-600" />
             </div>
-            <div className="text-2xl font-bold text-slate-900 font-mono tracking-tight">{signals.length}</div>
+            <div className="text-2xl font-bold text-slate-900 font-mono tracking-tight">{safeSignals.length}</div>
             <div className="text-[11px] text-slate-500 font-medium mt-1">Ranked & Verified</div>
           </Card>
 
@@ -318,7 +332,7 @@ export default function DashboardOverviewPage() {
               </Link>
             </div>
 
-            {signals.length === 0 ? (
+            {safeSignals.length === 0 ? (
               <EmptyState
                 icon={Activity}
                 title="No Intelligence Signals Yet"
@@ -328,7 +342,7 @@ export default function DashboardOverviewPage() {
               />
             ) : (
               <div className="divide-y divide-slate-100">
-                {signals.slice(0, 5).map((sig) => (
+                {safeSignals.slice(0, 5).map((sig) => (
                   <div key={sig.id} className="py-3.5 flex items-start justify-between gap-4 group">
                     <div className="space-y-1.5 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">

@@ -66,8 +66,9 @@ export default function IntelligenceFeedPage() {
         min_score: minScore > 0 ? minScore : undefined,
         limit: 50,
       });
-      setSignals(res.items);
-      setTotalCount(res.total);
+      const items = Array.isArray(res?.items) ? res.items : (Array.isArray(res) ? res : []);
+      setSignals(items);
+      setTotalCount(res?.total ?? items.length);
     } catch (err) {
       console.error("Failed to load signals:", err);
     } finally {
@@ -91,7 +92,9 @@ export default function IntelligenceFeedPage() {
 
   if (!selectedCompany) return null;
 
-  const filteredSignals = signals.filter((s) => {
+  const safeSignals = Array.isArray(signals) ? signals : [];
+
+  const filteredSignals = safeSignals.filter((s) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (

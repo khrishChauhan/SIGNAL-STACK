@@ -43,7 +43,7 @@ export default function CompetitorsPage() {
     try {
       setIsLoading(true);
       const list = await api.listCompetitors(selectedCompany.id);
-      setCompetitors(list);
+      setCompetitors(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error("Failed to load competitors:", err);
     } finally {

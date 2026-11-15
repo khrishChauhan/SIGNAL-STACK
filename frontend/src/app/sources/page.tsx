@@ -39,7 +39,7 @@ export default function SourceManagerPage() {
     try {
       setIsLoading(true);
       const list = await api.listSources(selectedCompany.id);
-      setSources(list);
+      setSources(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error("Failed to load sources:", err);
     } finally {
